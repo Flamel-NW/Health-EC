@@ -21,3 +21,11 @@ target_link_libraries(test_read_scheduler PRIVATE healthec_core)
 target_compile_options(test_read_scheduler PRIVATE -Wall -Wextra)
 
 add_test(NAME read_scheduler COMMAND test_read_scheduler)
+
+add_executable(test_disk_simulator test_disk_simulator.cpp)
+
+target_link_libraries(test_disk_simulator PRIVATE healthec_sim)
+
+target_compile_options(test_disk_simulator PRIVATE -Wall -Wextra)
+
+add_test(NAME disk_simulator COMMAND test_disk_simulator)
