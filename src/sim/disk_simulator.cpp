@@ -123,6 +123,25 @@ core::ShardReader DiskSimulator::make_reader() {
     };
 }
 
+// ── migrate_shard / make_mover ────────────────────────────────────────────────
+
+void DiskSimulator::migrate_shard(core::DiskId src, core::ShardId shard,
+                                   core::DiskId dst) {
+    auto from = shard_path(src, shard);
+    auto to   = shard_path(dst, shard);
+    if (!fs::exists(from))
+        throw std::runtime_error("migrate_shard: source not found " + from.string());
+    ensure_disk_dir(dst);
+    fs::copy_file(from, to, fs::copy_options::overwrite_existing);
+    fs::remove(from);
+}
+
+core::ShardMover DiskSimulator::make_mover() {
+    return [this](core::DiskId src, core::ShardId shard, core::DiskId dst) {
+        migrate_shard(src, shard, dst);
+    };
+}
+
 // ── Profile control ───────────────────────────────────────────────────────────
 
 void DiskSimulator::set_profile(core::DiskId disk, DiskProfile profile) {

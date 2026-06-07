@@ -1,6 +1,7 @@
 #pragma once
 
-#include "core/read_scheduler.h"   // ShardReadResult, ShardReader, DiskId, ShardId
+#include "core/migration_scheduler.h"  // ShardMover
+#include "core/read_scheduler.h"       // ShardReadResult, ShardReader, DiskId, ShardId
 
 #include <filesystem>
 #include <mutex>
@@ -65,6 +66,15 @@ public:
     // Returns a ShardReader lambda bound to *this.
     // Pass directly to ReadScheduler as the reader callback.
     core::ShardReader make_reader();
+
+    // Move shard `shard` from disk `src` to disk `dst`.
+    // Copies the shard file to the destination directory then removes the source.
+    // Throws std::runtime_error if the source shard file does not exist.
+    void migrate_shard(core::DiskId src, core::ShardId shard, core::DiskId dst);
+
+    // Returns a ShardMover lambda bound to *this.
+    // Pass directly to MigrationScheduler as the mover callback.
+    core::ShardMover make_mover();
 
     // ── Runtime profile control ───────────────────────────────────────────────
 

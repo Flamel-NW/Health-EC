@@ -29,3 +29,11 @@ target_link_libraries(test_disk_simulator PRIVATE healthec_sim)
 target_compile_options(test_disk_simulator PRIVATE -Wall -Wextra)
 
 add_test(NAME disk_simulator COMMAND test_disk_simulator)
+
+add_executable(test_migration_scheduler test_migration_scheduler.cpp)
+
+target_link_libraries(test_migration_scheduler PRIVATE healthec_sim)
+
+target_compile_options(test_migration_scheduler PRIVATE -Wall -Wextra)
+
+add_test(NAME migration_scheduler COMMAND test_migration_scheduler)
