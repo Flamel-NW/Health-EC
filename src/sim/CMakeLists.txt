@@ -1,5 +1,6 @@
 add_library(healthec_sim STATIC
     disk_simulator.cpp
+    workload_generator.cpp
 )
 
 target_include_directories(healthec_sim PUBLIC

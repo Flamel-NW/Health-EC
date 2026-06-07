@@ -37,3 +37,11 @@ target_link_libraries(test_migration_scheduler PRIVATE healthec_sim)
 target_compile_options(test_migration_scheduler PRIVATE -Wall -Wextra)
 
 add_test(NAME migration_scheduler COMMAND test_migration_scheduler)
+
+add_executable(test_integration test_integration.cpp)
+
+target_link_libraries(test_integration PRIVATE healthec_sim healthec_ec)
+
+target_compile_options(test_integration PRIVATE -Wall -Wextra)
+
+add_test(NAME integration COMMAND test_integration)
