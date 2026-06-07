@@ -1,6 +1,7 @@
 add_library(healthec_core STATIC
     score_manager.cpp
     placement_policy.cpp
+    read_scheduler.cpp
 )
 
 target_include_directories(healthec_core PUBLIC

@@ -13,3 +13,11 @@ target_link_libraries(test_score_manager PRIVATE healthec_core)
 target_compile_options(test_score_manager PRIVATE -Wall -Wextra)
 
 add_test(NAME score_manager COMMAND test_score_manager)
+
+add_executable(test_read_scheduler test_read_scheduler.cpp)
+
+target_link_libraries(test_read_scheduler PRIVATE healthec_core)
+
+target_compile_options(test_read_scheduler PRIVATE -Wall -Wextra)
+
+add_test(NAME read_scheduler COMMAND test_read_scheduler)
