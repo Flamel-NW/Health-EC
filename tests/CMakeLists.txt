@@ -5,3 +5,11 @@ target_link_libraries(test_jerasure_wrapper PRIVATE healthec_ec)
 target_compile_options(test_jerasure_wrapper PRIVATE -Wall -Wextra)
 
 add_test(NAME jerasure_wrapper COMMAND test_jerasure_wrapper)
+
+add_executable(test_score_manager test_score_manager.cpp)
+
+target_link_libraries(test_score_manager PRIVATE healthec_core)
+
+target_compile_options(test_score_manager PRIVATE -Wall -Wextra)
+
+add_test(NAME score_manager COMMAND test_score_manager)
