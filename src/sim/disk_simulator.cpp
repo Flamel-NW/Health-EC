@@ -12,11 +12,11 @@ namespace healthec::sim {
 // ── Constructor ───────────────────────────────────────────────────────────────
 
 DiskSimulator::DiskSimulator(std::string base_dir, int num_disks,
-                             DiskProfile default_profile)
+                             DiskProfile default_profile, uint64_t seed)
     : base_dir_(std::move(base_dir)),
       num_disks_(num_disks),
       profiles_(num_disks, default_profile),
-      rng_(std::random_device{}()) {
+      rng_(seed) {
     if (num_disks_ < 1)
         throw std::invalid_argument("num_disks must be >= 1");
     fs::create_directories(base_dir_);
@@ -63,6 +63,8 @@ std::vector<uint8_t> DiskSimulator::read_data(core::DiskId disk,
 // ── sample_latency_ms ─────────────────────────────────────────────────────────
 
 double DiskSimulator::sample_latency_ms(core::DiskId disk) {
+    if (disk < 0 || disk >= num_disks_)
+        throw std::out_of_range("DiskSimulator: DiskId out of range");
     DiskProfile profile;
     {
         std::shared_lock lock(profiles_mu_);
@@ -78,7 +80,7 @@ double DiskSimulator::sample_latency_ms(core::DiskId disk) {
         std::normal_distribution<double> normal(mean, jitter);
         lat = normal(rng_);
 
-        if (profile.spike_prob > 0.0) {
+        if (profile.slow_mode && profile.spike_prob > 0.0) {
             std::bernoulli_distribution spike(profile.spike_prob);
             if (spike(rng_)) lat += profile.spike_ms;
         }
@@ -145,16 +147,22 @@ core::ShardMover DiskSimulator::make_mover() {
 // ── Profile control ───────────────────────────────────────────────────────────
 
 void DiskSimulator::set_profile(core::DiskId disk, DiskProfile profile) {
+    if (disk < 0 || disk >= num_disks_)
+        throw std::out_of_range("DiskSimulator: DiskId out of range");
     std::unique_lock lock(profiles_mu_);
     profiles_[disk] = profile;
 }
 
 DiskProfile DiskSimulator::get_profile(core::DiskId disk) const {
+    if (disk < 0 || disk >= num_disks_)
+        throw std::out_of_range("DiskSimulator: DiskId out of range");
     std::shared_lock lock(profiles_mu_);
     return profiles_[disk];
 }
 
 void DiskSimulator::set_slow(core::DiskId disk, bool slow) {
+    if (disk < 0 || disk >= num_disks_)
+        throw std::out_of_range("DiskSimulator: DiskId out of range");
     std::unique_lock lock(profiles_mu_);
     profiles_[disk].slow_mode = slow;
 }

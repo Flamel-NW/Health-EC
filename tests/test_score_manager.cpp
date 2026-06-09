@@ -3,6 +3,8 @@
 
 #include <cmath>
 #include <cstdio>
+#include <thread>
+#include <vector>
 #include <cstdlib>
 #include <stdexcept>
 
@@ -217,6 +219,32 @@ static void test_placement_insufficient_disks() {
     std::puts("PASS test_placement_insufficient_disks");
 }
 
+// ── test concurrent access ────────────────────────────────────────────────────
+// 4 threads interleave update_health and get_health concurrently.
+// Verifies the shared_mutex read/write protection does not cause data races.
+static void test_concurrent_health_access() {
+    ScoreManager sm;
+    constexpr int NUM_THREADS = 4;
+    constexpr int OPS_PER_THREAD = 200;
+
+    std::vector<std::thread> threads;
+    threads.reserve(NUM_THREADS);
+    for (int t = 0; t < NUM_THREADS; ++t) {
+        threads.emplace_back([&sm, t]() {
+            for (int i = 0; i < OPS_PER_THREAD; ++i) {
+                if (i % 2 == 0)
+                    sm.update_health(t % 4, 0.3, 0.2, 0.0);
+                else
+                    (void)sm.get_health(t % 4);
+            }
+        });
+    }
+    for (auto& th : threads) th.join();
+
+    // No crash = no data race detectable at this level.
+    std::puts("PASS test_concurrent_health_access");
+}
+
 int main() {
     test_health_default();
     test_health_ema_update();
@@ -228,6 +256,7 @@ int main() {
     test_death_slower_decay();
     test_reset();
     test_placement_insufficient_disks();
+    test_concurrent_health_access();
 
     std::puts("All score_manager tests passed.");
     return 0;

@@ -46,7 +46,8 @@ public:
     // default_profile : initial DiskProfile applied to every disk
     explicit DiskSimulator(std::string    base_dir,
                            int            num_disks,
-                           DiskProfile    default_profile = DiskProfile{});
+                           DiskProfile    default_profile = DiskProfile{},
+                           uint64_t       seed            = std::random_device{}());
 
     // Write shard data to disk.  Creates <base_dir>/disk{d}/ as needed.
     void write_shard(core::DiskId disk, core::ShardId shard,
@@ -65,6 +66,8 @@ public:
 
     // Returns a ShardReader lambda bound to *this.
     // Pass directly to ReadScheduler as the reader callback.
+    // IMPORTANT: DiskSimulator must outlive all ReadScheduler instances that use
+    // this reader; the lambda captures a raw `this` pointer.
     core::ShardReader make_reader();
 
     // Move shard `shard` from disk `src` to disk `dst`.

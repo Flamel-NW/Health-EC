@@ -32,6 +32,11 @@ public:
     // Return the hotness weight for stripe_id, for use as w_s in
     // ScoreManager::update_slowness() / update_death().
     // Normalised so that the mean weight across all stripes ≈ 1.0.
+    //
+    // NOTE: weights are static Zipf PMF values computed at construction time.
+    // They do not reflect actual runtime access counts; this is a simplification.
+    // Extend to a dynamic sliding-window counter if per-stripe access skew
+    // changes at runtime (e.g. for time-varying workloads in T2+).
     double hotness(core::StripeId stripe_id) const;
 
     int num_stripes() const noexcept { return num_stripes_; }

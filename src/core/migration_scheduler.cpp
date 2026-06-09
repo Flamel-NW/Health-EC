@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <chrono>
+#include <cstdio>
 
 namespace healthec::core {
 
@@ -89,11 +90,17 @@ void MigrationScheduler::run() {
             std::unique_lock<std::mutex> lk(mu_);
             cv_.wait_for(lk,
                          std::chrono::duration<double, std::milli>(params_.tick_ms),
-                         [this] { return !running_.load() || !queue_.empty(); });
+                         [this] { return !running_.load(); });
         }
 
         if (!running_.load()) break;
-        tick_once();
+        try {
+            tick_once();
+        } catch (const std::exception& e) {
+            std::fprintf(stderr, "[MigrationScheduler] tick_once exception: %s\n", e.what());
+        } catch (...) {
+            std::fprintf(stderr, "[MigrationScheduler] tick_once unknown exception\n");
+        }
     }
 }
 

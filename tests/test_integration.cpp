@@ -124,6 +124,26 @@ static void write_stripe(core::StripeId sid, const core::StripeLayout& layout,
 
 // ── Test body ──────────────────────────────────────────────────────────────────
 
+// ── Zipf distribution verification ───────────────────────────────────────────
+// WorkloadGenerator(5, 1.0, 42): 2000 samples, stripe 0 hit rate should exceed
+// 30% (theoretical value ~43.8% for Zipf s=1, n=5).
+static bool test_zipf_distribution() {
+    constexpr int NUM_STRIPES = 5;
+    constexpr int SAMPLES     = 2000;
+    constexpr double MIN_RATE = 0.30;
+
+    sim::WorkloadGenerator wg(NUM_STRIPES, /*zipf_s=*/1.0, /*seed=*/42);
+    int stripe0_hits = 0;
+    for (int i = 0; i < SAMPLES; ++i)
+        if (wg.next_stripe() == 0) ++stripe0_hits;
+
+    double rate = static_cast<double>(stripe0_hits) / SAMPLES;
+    bool passed = rate > MIN_RATE;
+    std::cout << "  zipf_distribution: stripe0 rate=" << rate
+              << " (expect >" << MIN_RATE << "): " << (passed ? "PASS" : "FAIL") << "\n";
+    return passed;
+}
+
 int main()
 {
     const std::string test_dir =
@@ -132,6 +152,10 @@ int main()
     fs::create_directories(test_dir);
 
     bool all_passed = true;
+
+    // Zipf distribution check (no disk I/O needed).
+    if (!test_zipf_distribution()) all_passed = false;
+
     auto check = [&](bool cond, const char* msg) {
         if (!cond) { std::cerr << "FAIL: " << msg << "\n"; all_passed = false; }
         else         std::cout << "PASS: " << msg << "\n";
@@ -150,7 +174,7 @@ int main()
     fast_profile.base_mean_ms   = 1.0;
     fast_profile.base_jitter_ms = 0.2;
 
-    sim::DiskSimulator disk_sim(test_dir, NUM_DISKS, fast_profile);
+    sim::DiskSimulator disk_sim(test_dir, NUM_DISKS, fast_profile, /*seed=*/42);
     ec::JerasureCodec  codec(ec::EcParams{K, M});
 
     TestRegistry reg;

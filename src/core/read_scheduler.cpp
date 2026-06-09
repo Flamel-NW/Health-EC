@@ -123,7 +123,9 @@ StripeReadResult ReadScheduler::read_stripe(StripeId sid,
     // pending_futures_ so they keep running without blocking the caller.
     auto score_fut = std::async(
         std::launch::async,
-        [this, result, stripe_hotness]() { update_scores(result, stripe_hotness); });
+        [this, result, layout, stripe_hotness]() {
+            update_scores(result, layout, stripe_hotness);
+        });
 
     {
         std::lock_guard lg(futures_mu_);
@@ -151,6 +153,7 @@ void ReadScheduler::flush_score_updates() {
 // ── update_scores ─────────────────────────────────────────────────────────────
 
 void ReadScheduler::update_scores(const StripeReadResult& result,
+                                  const StripeLayout& layout,
                                   double stripe_hotness) {
     if (!result.proactive_mode) {
         // ── Phase A (normal k-read) ───────────────────────────────────────────
@@ -191,8 +194,14 @@ void ReadScheduler::update_scores(const StripeReadResult& result,
             score_manager_.update_death(r.shard_id, stripe_hotness, win);
         }
 
-        // Straggler data shards: parity definitely beat them if parity is in k.
+        // Straggler shards: only update scores for data shards.
+        // Parity shards should not accumulate D_i (they are never migrated).
         for (ShardId sid : result.stragglers) {
+            bool is_parity = false;
+            for (ShardId ps : layout.parity_shards)
+                if (ps == sid) { is_parity = true; break; }
+            if (is_parity) continue;
+
             double win = parity_in_k ? 1.0 : 0.0;
             score_manager_.update_slowness(sid, stripe_hotness, win);
             score_manager_.update_death(sid, stripe_hotness, win);

@@ -241,6 +241,46 @@ static void test_flush_score_updates() {
     std::puts("PASS test_flush_score_updates");
 }
 
+// ── test concurrent read_stripe ───────────────────────────────────────────────
+// 4 threads call read_stripe() concurrently on distinct stripe IDs.
+// Verifies futures_mu_ protects pending_futures_ without data races or crashes.
+static void test_concurrent_read_stripe() {
+    ScoreManager sm;
+    // Zero-latency reader so the test finishes quickly.
+    ShardReader reader = [](DiskId, ShardId shard, bool is_parity) -> ShardReadResult {
+        return {shard, is_parity, 0.0};
+    };
+
+    constexpr int K = 2, M = 1;
+    ReadScheduler rs(K, M, sm, reader);
+
+    auto make_layout = [](int base_shard, int base_disk) -> StripeLayout {
+        StripeLayout lay;
+        lay.data_shards   = {base_shard, base_shard + 1};
+        lay.parity_shards = {base_shard + 2};
+        lay.disk_of[base_shard]     = base_disk;
+        lay.disk_of[base_shard + 1] = base_disk + 1;
+        lay.disk_of[base_shard + 2] = base_disk + 2;
+        return lay;
+    };
+
+    constexpr int NUM_THREADS = 4;
+    std::vector<std::thread> threads;
+    threads.reserve(NUM_THREADS);
+    for (int t = 0; t < NUM_THREADS; ++t) {
+        threads.emplace_back([&rs, &make_layout, t]() {
+            for (int i = 0; i < 20; ++i) {
+                auto lay = make_layout(t * 100, t * 3);
+                rs.read_stripe(t * 100 + i, lay);
+            }
+        });
+    }
+    for (auto& th : threads) th.join();
+    rs.flush_score_updates();
+
+    std::puts("PASS test_concurrent_read_stripe");
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 int main() {
     test_normal_k_reads();
@@ -250,6 +290,7 @@ int main() {
     test_parity_win_updates_death();
     test_parity_straggler_no_death();
     test_flush_score_updates();
+    test_concurrent_read_stripe();
 
     std::puts("All read_scheduler tests passed.");
     return 0;

@@ -78,7 +78,8 @@ private:
     // Compute and apply S_i / D_i updates based on the completed stripe read.
     // Phase A (normal): loser = max-latency data shard → update_slowness only.
     // Phase B (proactive): parity_win_event per shard → update_slowness + update_death.
-    void update_scores(const StripeReadResult& result, double stripe_hotness);
+    void update_scores(const StripeReadResult& result, const StripeLayout& layout,
+                       double stripe_hotness);
 };
 
 }  // namespace healthec::core

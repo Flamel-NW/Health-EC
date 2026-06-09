@@ -7,6 +7,7 @@
 #include <cstring>
 #include <stdexcept>
 #include <string>
+#include <unordered_set>
 
 namespace healthec::ec {
 
@@ -87,7 +88,24 @@ std::vector<std::vector<char>> JerasureCodec::decode(
             "decode: all_shards must contain k+m=" + std::to_string(n) + " slots");
     }
 
-    const int shard_size = static_cast<int>(all_shards[0].size());
+    // Infer shard_size from the first non-erased, non-empty slot.
+    // Avoids silently using size=0 when shard 0 is an erased slot (M2).
+    std::unordered_set<int> erased_set(erased_indices.begin(), erased_indices.end());
+    int shard_size = 0;
+    for (int i = 0; i < n; ++i) {
+        if (!erased_set.count(i) && !all_shards[i].empty()) {
+            shard_size = static_cast<int>(all_shards[i].size());
+            break;
+        }
+    }
+    if (shard_size == 0) {
+        throw std::invalid_argument(
+            "decode: cannot infer shard_size (all present shards are empty)");
+    }
+    if (shard_size % static_cast<int>(sizeof(long)) != 0) {
+        throw std::invalid_argument(
+            "decode: shard_size must be a multiple of sizeof(long)");
+    }
 
     // Ensure erased slots have a buffer of the right size (content will be overwritten).
     for (int idx : erased_indices) {
