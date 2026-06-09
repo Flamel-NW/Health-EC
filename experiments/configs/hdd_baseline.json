@@ -1,0 +1,17 @@
+{
+  "name": "hdd_baseline",
+  "description": "Healthy HDD — no degradation. All reads follow a normal distribution centered near real-world data-center HDD latency.",
+  "sources": [
+    "DAMON 2021: measured 4KB random-read access latency ~7000 µs on HDD",
+    "OCP SAS/SATA Device Specification 2023: 4KB QD1 random read P50≤12ms, P99≤20ms"
+  ],
+  "disk_profile": {
+    "base_mean_ms":   9.0,
+    "base_jitter_ms": 3.5,
+    "slow_mode":      false,
+    "slow_mean_ms":   0.0,
+    "slow_jitter_ms": 0.0,
+    "spike_prob":     0.0,
+    "spike_ms":       0.0
+  }
+}

@@ -90,6 +90,11 @@ public:
 
     int num_disks() const noexcept { return num_disks_; }
 
+    // Sample a non-negative latency (ms) for the given disk without performing I/O.
+    // Acquires rng_mu_ internally; caller must NOT hold rng_mu_.
+    // Exposed as public for use by calibration tools (e.g. experiments/tools/calibrate_params).
+    double sample_latency_ms(core::DiskId disk);
+
 private:
     std::string  base_dir_;
     int          num_disks_;
@@ -105,10 +110,6 @@ private:
 
     // Creates <base_dir>/disk{d}/ if it does not exist.
     void ensure_disk_dir(core::DiskId disk) const;
-
-    // Sample a non-negative latency (ms) for the given disk.
-    // Acquires rng_mu_ internally; caller must NOT hold rng_mu_.
-    double sample_latency_ms(core::DiskId disk);
 };
 
 }  // namespace healthec::sim

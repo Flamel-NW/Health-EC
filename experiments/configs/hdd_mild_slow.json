@@ -1,0 +1,18 @@
+{
+  "name": "hdd_mild_slow",
+  "description": "Mildly degraded HDD — sustained ~2.4× slowdown with rare spikes. Models the average fail-slow event observed in large-scale production clusters.",
+  "sources": [
+    "USENIX ATC 2022 (large-scale fail-slow study): HDD avg event latency ~20.6ms, avg slowdown ratio ~2.41×",
+    "FAST 2016 'The Tail at Store': 2–3× slowdown is the most common fail-slow band for HDDs"
+  ],
+  "disk_profile": {
+    "base_mean_ms":   9.0,
+    "base_jitter_ms": 3.5,
+    "slow_mode":      true,
+    "slow_mean_ms":   24.0,
+    "slow_jitter_ms": 8.0,
+    "spike_prob":     0.01,
+    "spike_ms":       150.0
+  },
+  "notes": "spike_prob=0.01 is an engineering approximation of P99.9 tail behavior; not a directly measured per-request rate. See Deep Research Session 4 for calibration rationale."
+}

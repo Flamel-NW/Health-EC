@@ -1,0 +1,19 @@
+{
+  "name": "hdd_severe_slow",
+  "description": "Severely degraded HDD with bursty spikes — sustained ~5–6× slowdown plus occasional 500ms spikes. Models the long-tail (4–5 nines) fail-slow scenario.",
+  "sources": [
+    "FAST 2016 'The Tail at Store': at P99.99 HDDs reach ≥9× slowdown; at P99.999 ≥30×",
+    "HotCloud 2013 (limpware): weak-head failures can produce >1s per-I/O latency on affected platters",
+    "USENIX ATC 2022: HDD fail-slow events lasting 30–60 min show avg latency 25.7–28.8ms and ratio 2.88–3.75×"
+  ],
+  "disk_profile": {
+    "base_mean_ms":   9.0,
+    "base_jitter_ms": 3.5,
+    "slow_mode":      true,
+    "slow_mean_ms":   55.0,
+    "slow_jitter_ms": 18.0,
+    "spike_prob":     0.03,
+    "spike_ms":       500.0
+  },
+  "notes": "spike_ms=500 is a conservative approximation of the 9×/30× tail documented in FAST 2016. Suitable as the primary evaluation scenario for Health-EC tail-latency mitigation. For stress testing only, spike_ms=1000 can be used but should be labeled 'stress test', not 'representative production'."
+}
