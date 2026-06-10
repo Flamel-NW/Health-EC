@@ -7,3 +7,13 @@ target_include_directories(calibrate_params PRIVATE
 target_link_libraries(calibrate_params PRIVATE healthec_sim)
 
 target_compile_options(calibrate_params PRIVATE -Wall -Wextra)
+
+add_executable(calibrate_thresholds tools/calibrate_thresholds.cpp)
+
+target_include_directories(calibrate_thresholds PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src
+)
+
+target_link_libraries(calibrate_thresholds PRIVATE healthec_sim)
+
+target_compile_options(calibrate_thresholds PRIVATE -Wall -Wextra)

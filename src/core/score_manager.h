@@ -20,8 +20,21 @@ struct ScoreParams {
     double alpha_D = 0.05;  // Death Score EMA coefficient
 
     // Trigger thresholds (placeholder; set via experiments in T2).
+    // Calibrated values: see Health-EC-workflow/design/evaluation-params.md T2.2.2.
     double theta_S = 0.6;   // S_i threshold for proactive parity read
     double theta_D = 0.7;   // D_i threshold for shard migration candidacy
+
+    // loser_event significance gate (Phase A, normal read).
+    // Both conditions must hold; 0.0 defaults → always significant (backwards-compatible).
+    //   loser_lat >= median * (1 + loser_sig_ratio)  AND
+    //   loser_lat >= median + loser_sig_abs_ms
+    double loser_sig_ratio  = 0.0;
+    double loser_sig_abs_ms = 0.0;
+
+    // parity_win_event significance gate (Phase B, proactive read).
+    // parity_win_event = 1 only when shard_lat - parity_lat > parity_win_abs_ms.
+    // Default 0.0 → any parity win counts (original behaviour, backwards-compatible).
+    double parity_win_abs_ms = 0.0;
 
     // Weights for Health Score aggregation:
     //   f(l, q, e) = w_latency*(1-l) + w_queue*(1-q) + w_error*(1-e)

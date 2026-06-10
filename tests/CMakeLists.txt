@@ -45,3 +45,11 @@ target_link_libraries(test_integration PRIVATE healthec_sim healthec_ec)
 target_compile_options(test_integration PRIVATE -Wall -Wextra)
 
 add_test(NAME integration COMMAND test_integration)
+
+add_executable(test_loser_significance test_loser_significance.cpp)
+
+target_link_libraries(test_loser_significance PRIVATE healthec_core)
+
+target_compile_options(test_loser_significance PRIVATE -Wall -Wextra)
+
+add_test(NAME loser_significance COMMAND test_loser_significance)

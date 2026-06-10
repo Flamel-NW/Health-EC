@@ -157,19 +157,19 @@ void ReadScheduler::update_scores(const StripeReadResult& result,
                                   double stripe_hotness) {
     if (!result.proactive_mode) {
         // ── Phase A (normal k-read) ───────────────────────────────────────────
-        // loser = the data shard with the maximum latency in `completed`.
-        // All k shards are in `completed`; there are no stragglers in normal mode.
-        ShardId loser    = -1;
-        double  max_lat  = -1.0;
-        for (auto& r : result.completed) {
-            if (!r.is_parity && r.latency_ms > max_lat) {
-                max_lat = r.latency_ms;
-                loser   = r.shard_id;
-            }
-        }
+        // Collect (id, lat) for data shards, then find the significant loser.
+        std::vector<std::pair<ShardId, double>> data_lat;
+        for (auto& r : result.completed)
+            if (!r.is_parity)
+                data_lat.emplace_back(r.shard_id, r.latency_ms);
+
+        const auto& p = score_manager_.params();
+        auto loser_opt = compute_loser_significant(data_lat, p.loser_sig_ratio,
+                                                   p.loser_sig_abs_ms);
+
         for (auto& r : result.completed) {
             if (r.is_parity) continue;
-            double event = (r.shard_id == loser) ? 1.0 : 0.0;
+            double event = (loser_opt && r.shard_id == *loser_opt) ? 1.0 : 0.0;
             score_manager_.update_slowness(r.shard_id, stripe_hotness, event);
         }
     } else {
@@ -187,9 +187,11 @@ void ReadScheduler::update_scores(const StripeReadResult& result,
         }
 
         // Completed data shards.
+        const double pw_abs = score_manager_.params().parity_win_abs_ms;
         for (auto& r : result.completed) {
             if (r.is_parity) continue;
-            double win = (parity_in_k && parity_lat < r.latency_ms) ? 1.0 : 0.0;
+            double win = (parity_in_k && parity_won(parity_lat, r.latency_ms, pw_abs))
+                         ? 1.0 : 0.0;
             score_manager_.update_slowness(r.shard_id, stripe_hotness, win);
             score_manager_.update_death(r.shard_id, stripe_hotness, win);
         }
