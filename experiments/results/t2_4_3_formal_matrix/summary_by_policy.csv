@@ -1,0 +1,5 @@
+scenario,policy,seeds,num_runs,p95_ms_median,p95_ms_min,p95_ms_max,p99_ms_median,p99_ms_min,p99_ms_max,p99_improvement_pct_median,p99_improvement_pct_min,p99_improvement_pct_max,bandwidth_overhead_pct_median,bandwidth_overhead_pct_min,bandwidth_overhead_pct_max,decode_count_median,decode_count_min,decode_count_max,migration_triggers_median,migration_triggers_min,migration_triggers_max,migration_false_positives_median,migration_false_positives_min,migration_false_positives_max,migration_triggers_total,migration_false_positives_total,migration_false_positive_rate_pct,migration_precision_pct
+canonical_stress20,vanilla_ec,42;43;44;45;46,5,83.3,83,84.1,548.2,546.7,551.8,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,100
+canonical_stress20,late_binding,42;43;44;45;46,5,34.3,34,34.4,41.6,41.2,42,92.4,92.3,92.5,25,25,25,15899,15811,15934,0,0,0,0,0,0,0,0,0,100
+canonical_stress20,timeout_degraded_read,42;43;44;45;46,5,43.2,43.2,43.3,46.5,46.3,46.8,91.5,91.5,91.6,12.2,12.2,12.3,8611,8537,8640,0,0,0,0,0,0,0,0,0,100
+canonical_stress20,health_ec,42;43;44;45;46,5,69.7,69.1,70.3,99.5,96.9,101.1,81.8,81.6,82.4,7.9,7.9,8,6352,6298,6375,2661,2646,2700,1,0,5,13344,8,0.06,99.94
