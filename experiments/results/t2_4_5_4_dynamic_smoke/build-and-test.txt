@@ -1,0 +1,33 @@
+T2.4.5.4 build and CTest
+
+$ cmake --build build --target compare_policies
+returncode=0
+--- stdout ---
+[ 50%] Built target healthec_core
+[ 80%] Built target healthec_sim
+[100%] Built target compare_policies
+
+$ ctest --test-dir build --output-on-failure
+returncode=0
+--- stdout ---
+Internal ctest changing into directory: /root/workspace/Health-EC-workspace/Health-EC/build
+Test project /root/workspace/Health-EC-workspace/Health-EC/build
+    Start 1: jerasure_wrapper
+1/7 Test #1: jerasure_wrapper .................   Passed    0.00 sec
+    Start 2: score_manager
+2/7 Test #2: score_manager ....................   Passed    0.00 sec
+    Start 3: read_scheduler
+3/7 Test #3: read_scheduler ...................   Passed    0.13 sec
+    Start 4: disk_simulator
+4/7 Test #4: disk_simulator ...................   Passed    0.23 sec
+    Start 5: migration_scheduler
+5/7 Test #5: migration_scheduler ..............   Passed    0.03 sec
+    Start 6: integration
+6/7 Test #6: integration ......................   Passed    0.15 sec
+    Start 7: loser_significance
+7/7 Test #7: loser_significance ...............   Passed    0.00 sec
+
+100% tests passed, 0 tests failed out of 7
+
+Total Test time (real) =   0.56 sec
+

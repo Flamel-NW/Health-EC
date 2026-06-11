@@ -1,0 +1,43 @@
+T2.4.5.4 preflight
+
+$ git status --short --branch
+returncode=0
+--- stdout ---
+## dev...origin/dev
+?? experiments/results/t2_4_5_4_dynamic_smoke/
+
+$ git status --short --branch
+returncode=0
+--- stdout ---
+## master...origin/master
+?? scripts/t2_4_5_4_dynamic_smoke.py
+
+$ cat /proc/loadavg
+returncode=0
+--- stdout ---
+0.27 0.13 0.13 1/478 14
+
+$ free -h
+returncode=0
+--- stdout ---
+               total        used        free      shared  buff/cache   available
+Mem:            31Gi       2.5Gi        27Gi       1.1Mi       2.0Gi        28Gi
+Swap:             0B          0B          0B
+
+$ df -h /
+returncode=0
+--- stdout ---
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/root        48G   34G   14G  71% /
+
+$ vmstat 1 5
+returncode=0
+--- stdout ---
+procs -----------memory---------- ---swap-- -----io---- -system-- -------cpu-------
+ r  b   swpd   free   buff  cache   si   so    bi    bo   in   cs us sy id wa st gu
+ 0  0      0 28628496 123432 1944168    0    0    33  1160 3012    6  1  0 99  0  0  0
+ 0  0      0 28628472 123432 1944176    0    0     0     0  468  420  0  0 100  0  0  0
+ 0  0      0 28628224 123432 1944024    0    0     0     0  435  527  0  0 100  0  0  0
+ 0  0      0 28628224 123432 1944024    0    0     0     0  241  309  0  0 100  0  0  0
+ 0  0      0 28628224 123432 1944024    0    0     0     0  280  375  0  0 100  0  0  0
+

@@ -1,0 +1,6 @@
+dynamic_aggregate_csv: /root/workspace/Health-EC-workspace/Health-EC/build/experiments/compare_policies --scenario dynamic_degradation --seed 42 --num-reads 100000 --num-stripes 500 --zipf-s 1.0 --timeout-ms 15 --policy all --format csv
+dynamic_windowed_csv: /root/workspace/Health-EC-workspace/Health-EC/build/experiments/compare_policies --scenario dynamic_degradation --seed 42 --num-reads 100000 --num-stripes 500 --zipf-s 1.0 --timeout-ms 15 --policy all --format windowed_csv
+dynamic_event_trace: /root/workspace/Health-EC-workspace/Health-EC/build/experiments/compare_policies --scenario dynamic_degradation --seed 42 --num-reads 100000 --num-stripes 500 --zipf-s 1.0 --timeout-ms 15 --policy all --format event_trace
+noarg_static_table: /root/workspace/Health-EC-workspace/Health-EC/build/experiments/compare_policies
+static_canonical_csv: /root/workspace/Health-EC-workspace/Health-EC/build/experiments/compare_policies --scenario canonical_stress20 --seed 42 --num-reads 20000 --num-stripes 500 --zipf-s 1.0 --timeout-ms 30 --policy all --format csv
+negative_dynamic_bad_num_reads: /root/workspace/Health-EC-workspace/Health-EC/build/experiments/compare_policies --scenario dynamic_degradation --num-reads 99999 --format csv
