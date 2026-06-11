@@ -1,0 +1,44 @@
+T2.4.5.3 preflight
+
+$ git status --short --branch
+returncode=0
+--- stdout ---
+## dev...origin/dev
+?? experiments/results/t2_4_5_3_tdr_timeout_validation/
+
+$ git status --short --branch
+returncode=0
+--- stdout ---
+## master...origin/master
+?? scripts/__pycache__/
+?? scripts/t2_4_5_3_timeout_validation.py
+
+$ cat /proc/loadavg
+returncode=0
+--- stdout ---
+0.66 0.33 0.18 1/483 5
+
+$ free -h
+returncode=0
+--- stdout ---
+               total        used        free      shared  buff/cache   available
+Mem:            31Gi       2.4Gi        27Gi       1.1Mi       2.0Gi        28Gi
+Swap:             0B          0B          0B
+
+$ df -h /
+returncode=0
+--- stdout ---
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/root        48G   34G   14G  71% /
+
+$ vmstat 1 5
+returncode=0
+--- stdout ---
+procs -----------memory---------- ---swap-- -----io---- -system-- -------cpu-------
+ r  b   swpd   free   buff  cache   si   so    bi    bo   in   cs us sy id wa st gu
+ 0  0      0 28680056 122496 1924600    0    0    34  1122 2889    6  1  0 99  0  0  0
+ 0  0      0 28680056 122496 1924748    0    0     0     0  504  500  0  0 100  0  0  0
+ 0  0      0 28680056 122496 1924748    0    0     0     0  565  631  0  0 100  0  0  0
+ 0  0      0 28680056 122496 1924748    0    0     0     0  409  488  0  0 100  0  0  0
+ 0  0      0 28680056 122496 1924748    0    0     0     0  414  500  0  0 100  0  0  0
+
