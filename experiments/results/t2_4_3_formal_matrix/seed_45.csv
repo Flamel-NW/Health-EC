@@ -1,0 +1,5 @@
+scenario,seed,num_reads,num_stripes,zipf_s,policy,timeout_ms,p50_ms,p95_ms,p99_ms,p99_improvement_pct,issued_shard_reads,bandwidth_overhead_pct,parity_reads,proactive_or_degraded_reads,decode_count,migration_triggers,migration_false_positives
+canonical_stress20,45,20000,500,1.0,vanilla_ec,30.0,27.1,84.1,550.3,0.0,80000,0.0,0,0,0,0,0
+canonical_stress20,45,20000,500,1.0,late_binding,30.0,14.6,34.3,41.6,92.4,100000,25.0,20000,20000,15813,0,0
+canonical_stress20,45,20000,500,1.0,timeout_degraded_read,30.0,27.1,43.2,46.3,91.6,89793,12.2,9793,9793,8537,0,0
+canonical_stress20,45,20000,500,1.0,health_ec,30.0,16.3,70.2,101.1,81.6,86298,7.9,6298,6298,6298,2661,2

@@ -1,0 +1,5 @@
+/root/workspace/Health-EC-workspace/Health-EC/build/experiments/compare_policies --scenario canonical_stress20 --seed 42 --num-reads 20000 --num-stripes 500 --zipf-s 1.0 --timeout-ms 30.0 --policy all --format csv
+/root/workspace/Health-EC-workspace/Health-EC/build/experiments/compare_policies --scenario canonical_stress20 --seed 43 --num-reads 20000 --num-stripes 500 --zipf-s 1.0 --timeout-ms 30.0 --policy all --format csv
+/root/workspace/Health-EC-workspace/Health-EC/build/experiments/compare_policies --scenario canonical_stress20 --seed 44 --num-reads 20000 --num-stripes 500 --zipf-s 1.0 --timeout-ms 30.0 --policy all --format csv
+/root/workspace/Health-EC-workspace/Health-EC/build/experiments/compare_policies --scenario canonical_stress20 --seed 45 --num-reads 20000 --num-stripes 500 --zipf-s 1.0 --timeout-ms 30.0 --policy all --format csv
+/root/workspace/Health-EC-workspace/Health-EC/build/experiments/compare_policies --scenario canonical_stress20 --seed 46 --num-reads 20000 --num-stripes 500 --zipf-s 1.0 --timeout-ms 30.0 --policy all --format csv

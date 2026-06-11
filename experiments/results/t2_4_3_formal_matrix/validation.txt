@@ -1,0 +1,5 @@
+validation_result=PASS
+files_checked=seed_42.csv,seed_43.csv,seed_44.csv,seed_45.csv,seed_46.csv,matrix_raw.csv
+matrix_data_rows=20
+policy_order=vanilla_ec,late_binding,timeout_degraded_read,health_ec
+seed_42_p99=547.4,42.0,46.4,99.5

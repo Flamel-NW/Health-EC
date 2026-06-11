@@ -1,0 +1,15 @@
+[seed 42]
+return_code=0
+stderr_nonempty=0
+[seed 43]
+return_code=0
+stderr_nonempty=0
+[seed 44]
+return_code=0
+stderr_nonempty=0
+[seed 45]
+return_code=0
+stderr_nonempty=0
+[seed 46]
+return_code=0
+stderr_nonempty=0
