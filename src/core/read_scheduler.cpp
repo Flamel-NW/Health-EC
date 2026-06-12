@@ -15,7 +15,9 @@ struct ReadState {
     std::mutex              mu;
     std::condition_variable cv;
     std::vector<ShardReadResult> completed;
-    bool done = false;
+    std::vector<ShardReadResult> all_results;
+    std::size_t expected_results = 0;
+    bool first_k_done = false;
 };
 
 // ── ReadScheduler ─────────────────────────────────────────────────────────────
@@ -75,6 +77,8 @@ StripeReadResult ReadScheduler::read_stripe(StripeId sid,
     // ── Step 3: launch k (or k+1) parallel reads ────────────────────────────
     auto state = std::make_shared<ReadState>();
     state->completed.reserve(k_);
+    state->all_results.reserve(read_set.size());
+    state->expected_results = read_set.size();
 
     std::vector<std::future<void>> futs;
     futs.reserve(read_set.size());
@@ -86,13 +90,19 @@ StripeReadResult ReadScheduler::read_stripe(StripeId sid,
             [state, this, shard, disk, is_parity, k = k_]() {
                 ShardReadResult r = reader_(disk, shard, is_parity);
                 std::unique_lock lock(state->mu);
-                if (!state->done) {
+                state->all_results.push_back(r);
+                if (!state->first_k_done) {
                     state->completed.push_back(r);
                     if (static_cast<int>(state->completed.size()) == k) {
-                        state->done = true;
+                        state->first_k_done = true;
                         lock.unlock();
                         state->cv.notify_one();
+                        return;
                     }
+                }
+                if (state->all_results.size() == state->expected_results) {
+                    lock.unlock();
+                    state->cv.notify_all();
                 }
             }));
     }
@@ -100,7 +110,7 @@ StripeReadResult ReadScheduler::read_stripe(StripeId sid,
     // ── Step 4: wait for first k ─────────────────────────────────────────────
     {
         std::unique_lock lock(state->mu);
-        state->cv.wait(lock, [&state] { return state->done; });
+        state->cv.wait(lock, [&state] { return state->first_k_done; });
     }
 
     // ── Step 5: determine stragglers ─────────────────────────────────────────
@@ -123,8 +133,16 @@ StripeReadResult ReadScheduler::read_stripe(StripeId sid,
     // pending_futures_ so they keep running without blocking the caller.
     auto score_fut = std::async(
         std::launch::async,
-        [this, result, layout, stripe_hotness]() {
-            update_scores(result, layout, stripe_hotness);
+        [this, result, layout, stripe_hotness, state]() {
+            std::vector<ShardReadResult> all_results;
+            {
+                std::unique_lock lock(state->mu);
+                state->cv.wait(lock, [&state] {
+                    return state->all_results.size() == state->expected_results;
+                });
+                all_results = state->all_results;
+            }
+            update_scores(result, layout, stripe_hotness, all_results);
         });
 
     {
@@ -154,7 +172,8 @@ void ReadScheduler::flush_score_updates() {
 
 void ReadScheduler::update_scores(const StripeReadResult& result,
                                   const StripeLayout& layout,
-                                  double stripe_hotness) {
+                                  double stripe_hotness,
+                                  const std::vector<ShardReadResult>& all_results) {
     if (!result.proactive_mode) {
         // ── Phase A (normal k-read) ───────────────────────────────────────────
         // Collect (id, lat) for data shards, then find the significant loser.
@@ -175,7 +194,7 @@ void ReadScheduler::update_scores(const StripeReadResult& result,
     } else {
         // ── Phase B (proactive k+1 read) ─────────────────────────────────────
         // parity_win_event(i) = 1 iff parity is in `completed` AND
-        //   either i is a straggler OR parity arrived faster than i.
+        //   parity beat data shard i by more than parity_win_abs_ms.
         bool   parity_in_k  = false;
         double parity_lat   = std::numeric_limits<double>::max();
         for (auto& r : result.completed) {
@@ -186,25 +205,20 @@ void ReadScheduler::update_scores(const StripeReadResult& result,
             }
         }
 
-        // Completed data shards.
+        std::unordered_map<ShardId, double> latency_by_shard;
+        latency_by_shard.reserve(all_results.size());
+        for (const auto& r : all_results)
+            latency_by_shard[r.shard_id] = r.latency_ms;
+
+        // Update all data shards, including stragglers whose reads finished
+        // after read_stripe() returned its first-k result.
         const double pw_abs = score_manager_.params().parity_win_abs_ms;
-        for (auto& r : result.completed) {
-            if (r.is_parity) continue;
-            double win = (parity_in_k && parity_won(parity_lat, r.latency_ms, pw_abs))
+        for (ShardId sid : layout.data_shards) {
+            auto it = latency_by_shard.find(sid);
+            double win = (it != latency_by_shard.end() &&
+                          parity_in_k &&
+                          parity_won(parity_lat, it->second, pw_abs))
                          ? 1.0 : 0.0;
-            score_manager_.update_slowness(r.shard_id, stripe_hotness, win);
-            score_manager_.update_death(r.shard_id, stripe_hotness, win);
-        }
-
-        // Straggler shards: only update scores for data shards.
-        // Parity shards should not accumulate D_i (they are never migrated).
-        for (ShardId sid : result.stragglers) {
-            bool is_parity = false;
-            for (ShardId ps : layout.parity_shards)
-                if (ps == sid) { is_parity = true; break; }
-            if (is_parity) continue;
-
-            double win = parity_in_k ? 1.0 : 0.0;
             score_manager_.update_slowness(sid, stripe_hotness, win);
             score_manager_.update_death(sid, stripe_hotness, win);
         }

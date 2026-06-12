@@ -7,6 +7,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <filesystem>
+#include <limits>
 #include <numeric>
 #include <string>
 
@@ -204,6 +205,55 @@ static void test_make_reader_integration() {
     std::puts("PASS test_make_reader_integration");
 }
 
+// ── test 7: invalid_profile_rejected ─────────────────────────────────────────
+static void test_invalid_profile_rejected() {
+    bool threw = false;
+    try {
+        DiskProfile p;
+        p.base_jitter_ms = -1.0;
+        DiskSimulator ds(test_dir("bad_ctor"), 1, p);
+    } catch (const std::invalid_argument&) {
+        threw = true;
+    }
+    CHECK(threw);
+
+    DiskSimulator ds(test_dir("bad_set"), 1);
+    DiskProfile bad;
+    bad.spike_prob = 1.5;
+    threw = false;
+    try {
+        ds.set_profile(0, bad);
+    } catch (const std::invalid_argument&) {
+        threw = true;
+    }
+    CHECK(threw);
+
+    bad = DiskProfile{};
+    bad.base_mean_ms = std::numeric_limits<double>::infinity();
+    threw = false;
+    try {
+        ds.set_profile(0, bad);
+    } catch (const std::invalid_argument&) {
+        threw = true;
+    }
+    CHECK(threw);
+
+    std::puts("PASS test_invalid_profile_rejected");
+}
+
+// ── test 8: zero_jitter_is_deterministic ─────────────────────────────────────
+static void test_zero_jitter_is_deterministic() {
+    DiskProfile p;
+    p.base_mean_ms = 3.0;
+    p.base_jitter_ms = 0.0;
+    DiskSimulator ds(test_dir("zero_jitter"), 1, p);
+
+    CHECK(std::fabs(ds.sample_latency_ms(0) - 3.0) < 1e-9);
+    CHECK(std::fabs(ds.sample_latency_ms(0) - 3.0) < 1e-9);
+
+    std::puts("PASS test_zero_jitter_is_deterministic");
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 int main() {
     // Remove any leftover state from a previous run.
@@ -215,6 +265,8 @@ int main() {
     test_latency_slow_elevated();
     test_runtime_profile_change();
     test_make_reader_integration();
+    test_invalid_profile_rejected();
+    test_zero_jitter_is_deterministic();
 
     // Clean up temporary files.
     fs::remove_all(TMP_ROOT);

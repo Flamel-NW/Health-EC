@@ -9,9 +9,10 @@
 //   6. sig_abs_ms=15: loser exactly median+15 (>= boundary) → significant
 //   7. Both conditions (AND): ratio fails → nullopt even if abs passes
 //   8. Both conditions (AND): both pass → significant
-//   9. Even-k median linear interpolation (k=4)
-//  10. Single shard → always significant (no comparison possible)
-//  11. parity_won: parity faster → true; parity slower → false; equal → false
+//   9. Even-k median linear interpolation rejects lower-median shortcut
+//  10. Even-k median linear interpolation rejects upper-median shortcut
+//  11. Single shard → always significant (no comparison possible)
+//  12. parity_won: parity faster → true; parity slower → false; equal → false
 
 #include "core/read_scheduler.h"
 
@@ -105,18 +106,28 @@ static void test_and_both_pass() {
     std::puts("PASS test_and_both_pass");
 }
 
-// ── test 9: even-k=4 median linear interpolation ─────────────────────────────
-static void test_even_k_median_interpolation() {
-    // data: [5,10,15,50], sorted median: idx=1.5 → (10+15)/2=12.5
-    // loser=50, ratio=0.5: 50 >= 12.5*1.5=18.75 → YES
+// ── test 9: even-k median rejects lower-median shortcut ──────────────────────
+static void test_even_k_median_rejects_lower_shortcut() {
+    // data: [5,10,20,25], interpolated median=15.
+    // abs=12: 25 < 27 → NO. A lower-median shortcut would use 10 and pass.
     auto res = compute_loser_significant(
-        dl({{0, 5.0}, {1, 10.0}, {2, 15.0}, {3, 50.0}}), 0.5, 0.0);
-    CHECK(res.has_value());
-    CHECK(*res == 3);
-    std::puts("PASS test_even_k_median_interpolation");
+        dl({{0, 5.0}, {1, 10.0}, {2, 20.0}, {3, 25.0}}), 0.0, 12.0);
+    CHECK(!res.has_value());
+    std::puts("PASS test_even_k_median_rejects_lower_shortcut");
 }
 
-// ── test 10: single shard with default params → always significant ────────────
+// ── test 10: even-k median rejects upper-median shortcut ─────────────────────
+static void test_even_k_median_rejects_upper_shortcut() {
+    // data: [5,10,20,25], interpolated median=15.
+    // abs=9: 25 >= 24 → YES. An upper-median shortcut would use 20 and fail.
+    auto res = compute_loser_significant(
+        dl({{0, 5.0}, {1, 10.0}, {2, 20.0}, {3, 25.0}}), 0.0, 9.0);
+    CHECK(res.has_value());
+    CHECK(*res == 3);
+    std::puts("PASS test_even_k_median_rejects_upper_shortcut");
+}
+
+// ── test 11: single shard with default params → always significant ───────────
 static void test_single_shard() {
     // k=1: sorted=[7], median=7, loser=7, defaults 0,0 → 7>=7*1.0 and 7>=7+0 → YES
     auto res = compute_loser_significant(dl({{5, 7.0}}), 0.0, 0.0);
@@ -125,7 +136,7 @@ static void test_single_shard() {
     std::puts("PASS test_single_shard");
 }
 
-// ── test 11: parity_won ───────────────────────────────────────────────────────
+// ── test 12: parity_won ──────────────────────────────────────────────────────
 static void test_parity_won() {
     // Default abs_ms=0: any strict win counts.
     CHECK( parity_won(5.0, 10.0));        // parity faster → true
@@ -150,7 +161,8 @@ int main() {
     test_abs_at_boundary();
     test_and_ratio_fails();
     test_and_both_pass();
-    test_even_k_median_interpolation();
+    test_even_k_median_rejects_lower_shortcut();
+    test_even_k_median_rejects_upper_shortcut();
     test_single_shard();
     test_parity_won();
 

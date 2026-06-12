@@ -27,3 +27,39 @@ target_include_directories(compare_policies PRIVATE
 target_link_libraries(compare_policies PRIVATE healthec_sim)
 
 target_compile_options(compare_policies PRIVATE -Wall -Wextra)
+
+add_test(
+    NAME compare_policies_dynamic_csv
+    COMMAND $<TARGET_FILE:compare_policies>
+            --scenario dynamic_degradation
+            --num-reads 20000
+            --policy all
+            --format csv
+)
+
+add_test(
+    NAME compare_policies_dynamic_windowed_csv
+    COMMAND $<TARGET_FILE:compare_policies>
+            --scenario dynamic_degradation
+            --num-reads 20000
+            --policy all
+            --format windowed_csv
+)
+
+add_test(
+    NAME compare_policies_dynamic_event_trace
+    COMMAND $<TARGET_FILE:compare_policies>
+            --scenario dynamic_degradation
+            --num-reads 20000
+            --format event_trace
+)
+
+add_test(
+    NAME compare_policies_dynamic_invalid_num_reads
+    COMMAND $<TARGET_FILE:compare_policies>
+            --scenario dynamic_degradation
+            --num-reads 99999
+            --format csv
+)
+set_tests_properties(compare_policies_dynamic_invalid_num_reads
+    PROPERTIES WILL_FAIL TRUE)

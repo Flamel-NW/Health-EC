@@ -190,6 +190,28 @@ static void test_background_thread() {
     std::puts("PASS test_background_thread");
 }
 
+// ── test 7: mover exception does not starve later candidates ─────────────────
+static void test_mover_exception_continues() {
+    const std::string base = test_dir("exception_continue");
+    DiskSimulator ds(base, 2);
+    ds.write_shard(0, 20, {0x20});
+
+    ScoreManager sm;
+    sm.update_health(0, 0.9, 0.0, 0.0);
+    sm.update_health(1, 0.1, 0.0, 0.0);
+
+    MigrationParams p;
+    p.budget_B = 2;
+    MigrationScheduler ms_sched(sm, ds.make_mover(), p);
+    ms_sched.enqueue(10, 0, 0.99);  // missing file; mover throws
+    ms_sched.enqueue(20, 0, 0.90);  // must still be processed
+    ms_sched.tick_once();
+
+    CHECK( fs::exists(base + "/disk1/shard20.bin"));
+    CHECK(!fs::exists(base + "/disk0/shard20.bin"));
+    std::puts("PASS test_mover_exception_continues");
+}
+
 // ── main ─────────────────────────────────────────────────────────────────────
 
 int main() {
@@ -200,6 +222,7 @@ int main() {
     test_score_reset();
     test_enqueue_upsert();
     test_background_thread();
+    test_mover_exception_continues();
     fs::remove_all(TMP_ROOT);
     std::puts("All migration_scheduler tests passed.");
     return 0;

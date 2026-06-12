@@ -134,11 +134,12 @@ private:
     // Select the parity shard whose hosting disk has the highest H_d.
     ShardId pick_best_parity(const StripeLayout& layout) const;
 
-    // Compute and apply S_i / D_i updates based on the completed stripe read.
+    // Compute and apply S_i / D_i updates based on the stripe read.
     // Phase A (normal): loser = max-latency data shard → update_slowness only.
     // Phase B (proactive): parity_win_event per shard → update_slowness + update_death.
     void update_scores(const StripeReadResult& result, const StripeLayout& layout,
-                       double stripe_hotness);
+                       double stripe_hotness,
+                       const std::vector<ShardReadResult>& all_results);
 };
 
 }  // namespace healthec::core

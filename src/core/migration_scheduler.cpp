@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <chrono>
 #include <cstdio>
+#include <exception>
 
 namespace healthec::core {
 
@@ -72,7 +73,22 @@ void MigrationScheduler::tick_once() {
 
         if (target == -1) continue;  // no valid target; leave in queue
 
-        mover_(cand.current_disk, cand.shard_id, target);
+        try {
+            mover_(cand.current_disk, cand.shard_id, target);
+        } catch (const std::exception& e) {
+            std::fprintf(stderr,
+                         "MigrationScheduler: failed to migrate shard %d "
+                         "from disk %d to disk %d: %s\n",
+                         cand.shard_id, cand.current_disk, target, e.what());
+            continue;
+        } catch (...) {
+            std::fprintf(stderr,
+                         "MigrationScheduler: failed to migrate shard %d "
+                         "from disk %d to disk %d: unknown exception\n",
+                         cand.shard_id, cand.current_disk, target);
+            continue;
+        }
+
         sm_.reset(cand.shard_id);
 
         {
