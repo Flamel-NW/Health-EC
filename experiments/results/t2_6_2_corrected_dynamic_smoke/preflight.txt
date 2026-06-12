@@ -4,24 +4,42 @@ $ git status --short --branch
 returncode=0
 --- stdout ---
 ## dev...origin/dev
-?? experiments/results/t2_6_2_corrected_dynamic_smoke/
+ M experiments/CMakeLists.txt
+ M experiments/results/t2_6_2_corrected_dynamic_smoke/build-and-test.txt
+ M experiments/results/t2_6_2_corrected_dynamic_smoke/dynamic_seed42_all.csv
+ M experiments/results/t2_6_2_corrected_dynamic_smoke/dynamic_seed42_windowed.csv
+ M experiments/results/t2_6_2_corrected_dynamic_smoke/preflight.txt
+ M experiments/results/t2_6_2_corrected_dynamic_smoke/run-status.txt
+ M experiments/results/t2_6_2_corrected_dynamic_smoke/validation.txt
+ M experiments/results/t2_6_3_corrected_dynamic_formal_matrix/paper_table_dynamic_main.csv
+ M experiments/results/t2_6_3_corrected_dynamic_formal_matrix/summary_by_policy.csv
+ M experiments/tools/compare_policies.cpp
+ M src/core/migration_scheduler.cpp
+ M src/sim/disk_simulator.cpp
+ M src/sim/disk_simulator.h
+ M tests/test_disk_simulator.cpp
+ M tests/test_migration_scheduler.cpp
+?? experiments/results/t2_6_3_corrected_dynamic_formal_matrix/aggregation_provenance.txt
+?? experiments/tools/validate_compare_policies_contract.py
 
 $ git status --short --branch
 returncode=0
 --- stdout ---
 ## master...origin/master
-?? scripts/t2_6_2_corrected_dynamic_smoke.py
+ M scripts/t2_6_2_corrected_dynamic_smoke.py
+ M scripts/t2_6_3_corrected_dynamic_formal_matrix.py
+ M scripts/t2_6_4_corrected_dynamic_aggregation.py
 
 $ cat /proc/loadavg
 returncode=0
 --- stdout ---
-0.16 0.15 0.07 1/416 17
+0.24 0.19 0.12 1/540 17
 
 $ free -h
 returncode=0
 --- stdout ---
                total        used        free      shared  buff/cache   available
-Mem:            31Gi       1.7Gi        29Gi       1.1Mi       1.0Gi        29Gi
+Mem:            31Gi       2.7Gi        26Gi       2.6Mi       2.0Gi        28Gi
 Swap:             0B          0B          0B
 
 $ df -h /
@@ -35,9 +53,9 @@ returncode=0
 --- stdout ---
 procs -----------memory---------- ---swap-- -----io---- -system-- -------cpu-------
  r  b   swpd   free   buff  cache   si   so    bi    bo   in   cs us sy id wa st gu
- 0  0      0 30417760  59172 975548    0    0   547  2438 1436    2  1  0 98  0  0  0
- 0  0      0 30416952  59172 975680    0    0     0     0  375  334  0  0 100  0  0  0
- 0  0      0 30416952  59172 975680    0    0     0    60  217  333  0  0 100  0  0  0
- 0  0      0 30416952  59172 975680    0    0     0     0  378  471  0  0 100  0  0  0
- 1  0      0 30416952  59172 975680    0    0     0     0  393  524  0  0 99  0  0  0
+ 0  0      0 28287312 125144 2022872    0    0   119  2654 1677    2  1  0 98  0  0  0
+ 0  0      0 28285984 125144 2023040    0    0     0  6404 1252 1297  1  0 99  0  0  0
+ 0  0      0 28285984 125144 2023040    0    0     0   348  436  667  0  0 100  0  0  0
+ 0  0      0 28285984 125144 2023040    0    0     0     0  396  616  0  0 100  0  0  0
+ 0  0      0 28285984 125144 2023040    0    0     0     0  310  538  0  0 100  0  0  0
 

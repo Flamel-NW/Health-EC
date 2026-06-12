@@ -1,3 +1,4 @@
+STATUS=PASS
 T2.6.2 corrected dynamic smoke / regression PASS
 scenario=dynamic_degradation
 seed=42
@@ -23,10 +24,10 @@ formal_table=NOT_GENERATED
 
 dynamic_seed42_metrics:
 policy,p50_ms,p95_ms,p99_ms,p99_improvement_pct,post_onset_p99_auc_ms,bw_pct,parity_reads,pre_slowdown_parity_reads,recovery_parity_reads,migration_triggers,migration_true_positives,migration_false_positives,migration_false_negatives
-vanilla_ec,14.0,65.4,91.0,0.0,3334.1,0.0,0,0,0,0,0,0,-1
-late_binding,11.4,16.1,19.1,79.0,50.8,25.0,100000,15000,10460,0,0,0,-1
-timeout_degraded_read,14.0,26.5,29.7,67.4,144.3,10.6,42398,2463,8969,0,0,0,-1
-health_ec,12.8,32.6,71.9,21.0,524.8,0.2,796,10,3,31,31,0,657
+vanilla_ec,14.0,65.4,91.0,0.0,3334.1,0.0,0,0,0,0,-1,-1,-1
+late_binding,11.4,16.1,19.1,79.0,50.8,25.0,100000,15000,10460,0,-1,-1,-1
+timeout_degraded_read,14.0,26.5,29.7,67.4,144.3,10.6,42398,2463,8969,0,-1,-1,-1
+health_ec,12.8,32.5,71.8,21.1,523.9,0.2,812,10,4,31,27,0,656
 
 static_canonical_p99:
 vanilla_ec=547.4

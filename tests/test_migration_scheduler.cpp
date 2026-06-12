@@ -201,10 +201,10 @@ static void test_mover_exception_continues() {
     sm.update_health(1, 0.1, 0.0, 0.0);
 
     MigrationParams p;
-    p.budget_B = 2;
+    p.budget_B = 1;
     MigrationScheduler ms_sched(sm, ds.make_mover(), p);
     ms_sched.enqueue(10, 0, 0.99);  // missing file; mover throws
-    ms_sched.enqueue(20, 0, 0.90);  // must still be processed
+    ms_sched.enqueue(20, 0, 0.90);  // must still be processed in this tick
     ms_sched.tick_once();
 
     CHECK( fs::exists(base + "/disk1/shard20.bin"));

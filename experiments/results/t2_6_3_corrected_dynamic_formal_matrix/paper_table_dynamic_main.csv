@@ -1,5 +1,5 @@
 scenario,policy,seeds,num_runs,timeout_ms,p99_ms_median,p99_ms_min,p99_ms_max,p99_improvement_pct_median,post_onset_p99_auc_ms_median,post_onset_p99_auc_ms_min,post_onset_p99_auc_ms_max,bandwidth_overhead_pct_median,bandwidth_overhead_pct_min,bandwidth_overhead_pct_max,pre_slowdown_parity_reads_median,pre_slowdown_parity_reads_min,pre_slowdown_parity_reads_max,recovery_parity_reads_median,recovery_parity_reads_min,recovery_parity_reads_max,recovery_regret_reads_median,recovery_regret_reads_min,recovery_regret_reads_max,migration_true_positives_total,migration_false_positives_total,migration_false_negatives_total,migration_precision_pct,migration_recall_pct
-dynamic_degradation,vanilla_ec,42..71,30,15,91.25,90.2,92.4,0,3332.5,3303.1,3404.3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,-1,-1,-1
-dynamic_degradation,late_binding,42..71,30,15,19.2,19.1,19.3,79,50.3,48.4,53,25,25,25,15000,15000,15000,10439.5,10285,10594,28668,28495,29034,0,0,-1,-1,-1
-dynamic_degradation,timeout_degraded_read,42..71,30,15,29.6,29.5,29.7,67.55,142.8,139.5,146.5,10.5,10.5,10.6,2437.5,2350,2541,8970,8806,9124,18390.5,18244,18630,0,0,-1,-1,-1
+dynamic_degradation,vanilla_ec,42..71,30,15,91.25,90.2,92.4,0,3332.5,3303.1,3404.3,0,0,0,0,0,0,0,0,0,0,0,0,-1,-1,-1,-1,-1
+dynamic_degradation,late_binding,42..71,30,15,19.2,19.1,19.3,79,50.3,48.4,53,25,25,25,15000,15000,15000,10439.5,10285,10594,28668,28495,29034,-1,-1,-1,-1,-1
+dynamic_degradation,timeout_degraded_read,42..71,30,15,29.6,29.5,29.7,67.55,142.8,139.5,146.5,10.5,10.5,10.6,2437.5,2350,2541,8970,8806,9124,18390.5,18244,18630,-1,-1,-1,-1,-1
 dynamic_degradation,health_ec,42..71,30,15,71.35,70.6,72.6,21.8,527.4,516.8,541.6,0.2,0.2,0.2,0,0,14,3.5,1,8,68.5,18,122,951,4,19549,99.581,4.639

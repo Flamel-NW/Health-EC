@@ -1,3 +1,5 @@
+find_package(Python3 COMPONENTS Interpreter REQUIRED)
+
 add_executable(calibrate_params tools/calibrate_params.cpp)
 
 target_include_directories(calibrate_params PRIVATE
@@ -63,3 +65,10 @@ add_test(
 )
 set_tests_properties(compare_policies_dynamic_invalid_num_reads
     PROPERTIES WILL_FAIL TRUE)
+
+add_test(
+    NAME compare_policies_dynamic_contract
+    COMMAND ${Python3_EXECUTABLE}
+            ${CMAKE_CURRENT_SOURCE_DIR}/tools/validate_compare_policies_contract.py
+            $<TARGET_FILE:compare_policies>
+)

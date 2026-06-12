@@ -1,9 +1,9 @@
-name,returncode,stderr_empty,stdout_lines,expected_success
-dynamic_aggregate_csv,0,1,5,1
-dynamic_windowed_csv,0,1,81,1
-dynamic_event_trace,0,1,14,1
-noarg_static_table,0,1,10,1
-static_canonical_csv,0,1,5,1
-negative_dynamic_bad_num_reads,1,0,0,0
-negative_health_theta_s,1,0,0,0
-negative_health_parity_win_abs,1,0,0,0
+name,returncode,stderr_empty,stdout_lines,expected_success,expected_stderr
+dynamic_aggregate_csv,0,1,5,1,
+dynamic_windowed_csv,0,1,81,1,
+dynamic_event_trace,0,1,14,1,
+noarg_static_table,0,1,10,1,
+static_canonical_csv,0,1,5,1,
+negative_dynamic_bad_num_reads,1,0,0,0,divisible by 20
+negative_health_theta_s,1,0,0,0,must be positive
+negative_health_parity_win_abs,1,0,0,0,must be non-negative

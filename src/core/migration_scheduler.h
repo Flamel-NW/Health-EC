@@ -39,11 +39,13 @@ struct MigrationParams {
 //   4. Call stop() to gracefully drain and join the thread.
 //
 // Per-tick behaviour (see tick_once()):
-//   - Select the top budget_B candidates ordered by D_i descending.
+//   - Scan candidates ordered by D_i descending until budget_B migrations succeed.
 //   - For each candidate, find the healthiest disk d' satisfying
 //       H_{d'} > H_{current_disk}  &&  d' != current_disk.
 //   - If a valid target exists: invoke mover_, then ScoreManager::reset().
 //   - If no valid target exists: leave the candidate in the queue.
+//   - If mover_ fails: reset and remove that candidate so it cannot starve
+//     lower-scored candidates on later ticks.
 //
 // Thread-safety: all public methods are safe to call concurrently.
 class MigrationScheduler {
