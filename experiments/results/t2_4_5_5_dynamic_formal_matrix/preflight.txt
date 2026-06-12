@@ -1,0 +1,43 @@
+T2.4.5.5 preflight
+
+$ git status --short --branch
+returncode=0
+--- stdout ---
+## dev...origin/dev
+?? experiments/results/t2_4_5_5_dynamic_formal_matrix/
+
+$ git status --short --branch
+returncode=0
+--- stdout ---
+## master...origin/master
+?? scripts/t2_4_5_5_dynamic_formal_matrix.py
+
+$ cat /proc/loadavg
+returncode=0
+--- stdout ---
+0.18 0.11 0.03 2/483 14
+
+$ free -h
+returncode=0
+--- stdout ---
+               total        used        free      shared  buff/cache   available
+Mem:            31Gi       2.5Gi        27Gi       1.1Mi       2.0Gi        28Gi
+Swap:             0B          0B          0B
+
+$ df -h /
+returncode=0
+--- stdout ---
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/root        48G   34G   14G  71% /
+
+$ vmstat 1 5
+returncode=0
+--- stdout ---
+procs -----------memory---------- ---swap-- -----io---- -system-- -------cpu-------
+ r  b   swpd   free   buff  cache   si   so    bi    bo   in   cs us sy id wa st gu
+ 1  0      0 28542728 125284 2012348    0    0    18   789 2155    4  1  0 99  0  0  0
+ 0  0      0 28542164 125288 2012376    0    0     0  6232 1857 2024  2  1 97  0  0  0
+ 0  0      0 28542164 125288 2012376    0    0     0  5596 1731 2053  2  1 97  0  0  0
+ 1  0      0 28543120 125288 2012376    0    0     0  5780 1804 2105  2  1 98  0  0  0
+ 0  0      0 28543152 125288 2012376    0    0     0  5516 1598 1970  2  1 97  0  0  0
+

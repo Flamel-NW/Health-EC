@@ -1,0 +1,5 @@
+scenario,seed,num_reads,num_stripes,zipf_s,num_windows,window_size,policy,timeout_ms,p50_ms,p95_ms,p99_ms,p99_improvement_pct,post_onset_p95_auc_ms,post_onset_p99_auc_ms,issued_shard_reads,bandwidth_overhead_pct,parity_reads,pre_slowdown_parity_reads,recovery_parity_reads,proactive_or_degraded_reads,decode_count,migration_triggers,migration_true_positives,migration_false_positives,migration_false_negatives,first_detection_latency_reads,first_mitigation_latency_reads,recovery_regret_reads
+dynamic_degradation,52,100000,500,1.0,20,5000,vanilla_ec,15.0,14.0,65.4,92.7,0.0,504.2,3361.6,400000,0.0,0,0,0,0,0,0,0,0,-1,-1,-1,0
+dynamic_degradation,52,100000,500,1.0,20,5000,late_binding,15.0,11.4,16.2,19.3,79.2,38.0,48.4,500000,25.0,100000,15000,10594,100000,81692,0,0,0,-1,-1,1,28783
+dynamic_degradation,52,100000,500,1.0,20,5000,timeout_degraded_read,15.0,14.0,26.5,29.6,68.0,130.9,143.5,442295,10.6,42295,2444,9117,42295,23431,0,0,0,-1,1,1,18613
+dynamic_degradation,52,100000,500,1.0,20,5000,health_ec,15.0,13.2,47.3,78.4,15.4,416.8,595.7,416331,4.1,16331,53,4061,16331,16123,4482,4167,315,690,7,7,8708
