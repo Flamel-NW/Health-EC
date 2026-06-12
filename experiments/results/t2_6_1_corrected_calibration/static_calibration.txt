@@ -1,4 +1,4 @@
-T2.4.6.1 static calibrate_thresholds sanity
+T2.6.1 static calibrate_thresholds sanity
 
 $ /root/workspace/Health-EC-workspace/Health-EC/build/experiments/calibrate_thresholds
 returncode=0

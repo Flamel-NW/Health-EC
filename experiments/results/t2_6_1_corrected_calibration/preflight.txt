@@ -1,11 +1,11 @@
-T2.4.6.1 corrected calibration preflight
+T2.6.1 corrected calibration preflight
 
 $ git status --short --branch
 returncode=0
 --- stdout ---
 ## dev...origin/dev
  M experiments/tools/compare_policies.cpp
-?? experiments/results/t2_4_6_1_corrected_calibration/
+?? experiments/results/t2_6_1_corrected_calibration/
 
 $ git status --short --branch
 returncode=0
@@ -16,7 +16,7 @@ returncode=0
  M evaluation/evaluation.md
  M task_tree.md
 ?? scripts/__pycache__/
-?? scripts/t2_4_6_1_corrected_calibration.py
+?? scripts/t2_6_1_corrected_calibration.py
 
 $ cat /proc/loadavg
 returncode=0

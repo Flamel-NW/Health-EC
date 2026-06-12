@@ -1,4 +1,4 @@
-T2.4.5.3 selected Timeout Degraded Read baseline
+T2.5.3 selected Timeout Degraded Read baseline
 
 selected_timeout_ms=15
 selection_objective=lowest median post_onset_p99_auc_ms

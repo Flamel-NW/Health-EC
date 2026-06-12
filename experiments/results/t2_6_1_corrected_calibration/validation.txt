@@ -1,4 +1,4 @@
-T2.4.6.1 corrected calibration PASS
+T2.6.1 corrected calibration PASS
 LOCKED=PASS
 selected_theta_S=1.7
 selected_theta_D=1.7

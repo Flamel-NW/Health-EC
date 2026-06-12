@@ -1,4 +1,4 @@
-T2.4.5.5 build and CTest
+T2.5.4 build and CTest
 
 $ cmake --build build --target compare_policies
 returncode=0
@@ -21,7 +21,7 @@ Test project /root/workspace/Health-EC-workspace/Health-EC/build
     Start 4: disk_simulator
 4/7 Test #4: disk_simulator ...................   Passed    0.23 sec
     Start 5: migration_scheduler
-5/7 Test #5: migration_scheduler ..............   Passed    0.02 sec
+5/7 Test #5: migration_scheduler ..............   Passed    0.03 sec
     Start 6: integration
 6/7 Test #6: integration ......................   Passed    0.15 sec
     Start 7: loser_significance
@@ -29,5 +29,5 @@ Test project /root/workspace/Health-EC-workspace/Health-EC/build
 
 100% tests passed, 0 tests failed out of 7
 
-Total Test time (real) =   0.55 sec
+Total Test time (real) =   0.56 sec
 

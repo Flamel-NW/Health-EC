@@ -1,16 +1,16 @@
-T2.4.6.2 corrected dynamic smoke preflight
+T2.6.2 corrected dynamic smoke preflight
 
 $ git status --short --branch
 returncode=0
 --- stdout ---
 ## dev...origin/dev
-?? experiments/results/t2_4_6_2_corrected_dynamic_smoke/
+?? experiments/results/t2_6_2_corrected_dynamic_smoke/
 
 $ git status --short --branch
 returncode=0
 --- stdout ---
 ## master...origin/master
-?? scripts/t2_4_6_2_corrected_dynamic_smoke.py
+?? scripts/t2_6_2_corrected_dynamic_smoke.py
 
 $ cat /proc/loadavg
 returncode=0

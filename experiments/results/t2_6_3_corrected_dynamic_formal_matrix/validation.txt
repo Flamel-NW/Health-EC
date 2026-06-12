@@ -1,4 +1,4 @@
-T2.4.6.3 corrected dynamic formal matrix PASS
+T2.6.3 corrected dynamic formal matrix PASS
 scenario=dynamic_degradation
 seeds=42..71
 num_seeds=30
@@ -25,7 +25,7 @@ negative_dynamic_bad_num_reads=PASS
 negative_health_theta_s=PASS
 negative_health_parity_win_abs=PASS
 formal_table=NOT_GENERATED
-analysis_deferred_to=T2.4.6.4
-aggregate_artifact=/root/workspace/Health-EC-workspace/Health-EC/experiments/results/t2_4_6_3_corrected_dynamic_formal_matrix/dynamic_matrix_raw.csv
-windowed_artifact=/root/workspace/Health-EC-workspace/Health-EC/experiments/results/t2_4_6_3_corrected_dynamic_formal_matrix/dynamic_windowed_raw.csv
-event_trace_artifact=/root/workspace/Health-EC-workspace/Health-EC/experiments/results/t2_4_6_3_corrected_dynamic_formal_matrix/event_trace_seed42.csv
+analysis_deferred_to=T2.6.4
+aggregate_artifact=/root/workspace/Health-EC-workspace/Health-EC/experiments/results/t2_6_3_corrected_dynamic_formal_matrix/dynamic_matrix_raw.csv
+windowed_artifact=/root/workspace/Health-EC-workspace/Health-EC/experiments/results/t2_6_3_corrected_dynamic_formal_matrix/dynamic_windowed_raw.csv
+event_trace_artifact=/root/workspace/Health-EC-workspace/Health-EC/experiments/results/t2_6_3_corrected_dynamic_formal_matrix/event_trace_seed42.csv

@@ -1,16 +1,16 @@
-T2.4.5.4 preflight
+T2.5.4 preflight
 
 $ git status --short --branch
 returncode=0
 --- stdout ---
 ## dev...origin/dev
-?? experiments/results/t2_4_5_4_dynamic_smoke/
+?? experiments/results/t2_5_4_dynamic_smoke/
 
 $ git status --short --branch
 returncode=0
 --- stdout ---
 ## master...origin/master
-?? scripts/t2_4_5_4_dynamic_smoke.py
+?? scripts/t2_5_4_dynamic_smoke.py
 
 $ cat /proc/loadavg
 returncode=0

@@ -1,17 +1,17 @@
-T2.4.6.3 corrected dynamic formal matrix preflight
+T2.6.3 corrected dynamic formal matrix preflight
 
 $ git status --short --branch
 returncode=0
 --- stdout ---
 ## dev...origin/dev
-?? experiments/results/t2_4_6_3_corrected_dynamic_formal_matrix/
+?? experiments/results/t2_6_3_corrected_dynamic_formal_matrix/
 
 $ git status --short --branch
 returncode=0
 --- stdout ---
 ## master...origin/master
 ?? scripts/__pycache__/
-?? scripts/t2_4_6_3_corrected_dynamic_formal_matrix.py
+?? scripts/t2_6_3_corrected_dynamic_formal_matrix.py
 
 $ cat /proc/loadavg
 returncode=0
