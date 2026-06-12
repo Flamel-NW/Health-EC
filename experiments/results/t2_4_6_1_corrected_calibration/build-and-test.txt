@@ -1,0 +1,48 @@
+T2.4.6.1 build and CTest
+
+$ cmake --build build --target compare_policies
+returncode=0
+--- stdout ---
+[ 50%] Built target healthec_core
+[ 80%] Built target healthec_sim
+[100%] Built target compare_policies
+
+$ cmake --build build --target calibrate_thresholds
+returncode=0
+--- stdout ---
+[ 50%] Built target healthec_core
+[ 80%] Built target healthec_sim
+[100%] Built target calibrate_thresholds
+
+$ ctest --test-dir build --output-on-failure
+returncode=0
+--- stdout ---
+Internal ctest changing into directory: /root/workspace/Health-EC-workspace/Health-EC/build
+Test project /root/workspace/Health-EC-workspace/Health-EC/build
+      Start  1: jerasure_wrapper
+ 1/11 Test  #1: jerasure_wrapper .............................   Passed    0.00 sec
+      Start  2: score_manager
+ 2/11 Test  #2: score_manager ................................   Passed    0.00 sec
+      Start  3: read_scheduler
+ 3/11 Test  #3: read_scheduler ...............................   Passed    0.21 sec
+      Start  4: disk_simulator
+ 4/11 Test  #4: disk_simulator ...............................   Passed    0.22 sec
+      Start  5: migration_scheduler
+ 5/11 Test  #5: migration_scheduler ..........................   Passed    0.03 sec
+      Start  6: integration
+ 6/11 Test  #6: integration ..................................   Passed    0.15 sec
+      Start  7: loser_significance
+ 7/11 Test  #7: loser_significance ...........................   Passed    0.00 sec
+      Start  8: compare_policies_dynamic_csv
+ 8/11 Test  #8: compare_policies_dynamic_csv .................   Passed    0.18 sec
+      Start  9: compare_policies_dynamic_windowed_csv
+ 9/11 Test  #9: compare_policies_dynamic_windowed_csv ........   Passed    0.18 sec
+      Start 10: compare_policies_dynamic_event_trace
+10/11 Test #10: compare_policies_dynamic_event_trace .........   Passed    0.00 sec
+      Start 11: compare_policies_dynamic_invalid_num_reads
+11/11 Test #11: compare_policies_dynamic_invalid_num_reads ...   Passed    0.00 sec
+
+100% tests passed, 0 tests failed out of 11
+
+Total Test time (real) =   0.99 sec
+
