@@ -1,0 +1,11 @@
+compare_policies  scenario=canonical_stress20  seed=42  reads=20000  stripes=500  zipf_s=1
+Slow disks: disk8=mild  disk9=severe  ratio=20% stress
+Timeout baseline: timeout_ms=30
+Health-EC locked params: theta_S=2 theta_D=4 loser_sig_abs_ms=15 parity_win_abs_ms=15
+
+policy                        P50      P95      P99   P99imp%       reads      BW%   parity     pro/deg   decode      mig    migFP
+----------------------------------------------------------------------------------------------------------------------------------
+vanilla_ec                   27.5     83.3    547.4       0.0       80000      0.0        0           0        0        0        0
+late_binding                 14.6     34.4     42.0      92.3      100000     25.0    20000       20000    15811        0        0
+timeout_degraded_read        27.4     43.2     46.4      91.5       89777     12.2     9777        9777     8611        0        0
+health_ec                    16.4     69.1     99.5      81.8       86355      7.9     6355        6355     6352     2646        0

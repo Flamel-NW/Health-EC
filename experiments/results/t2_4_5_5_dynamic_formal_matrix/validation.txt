@@ -1,0 +1,27 @@
+T2.4.5.5 dynamic formal matrix PASS
+scenario=dynamic_degradation
+seeds=42..71
+num_seeds=30
+dynamic_num_reads=100000
+num_stripes=500
+zipf_s=1.0
+timeout_ms=15
+build_target=PASS
+ctest=PASS
+return_codes=PASS
+stderr_empty=PASS
+aggregate_header=PASS
+aggregate_rows=120
+aggregate_seed_policy_coverage=PASS
+windowed_header=PASS
+windowed_rows=2400
+windowed_seed_policy_window_coverage=PASS
+event_trace_header=PASS
+event_trace_rows=13
+static_canonical_csv=PASS
+noarg_static_table=PASS
+negative_dynamic_bad_num_reads=PASS
+analysis_deferred_to=T2.4.5.6
+aggregate_artifact=/root/workspace/Health-EC-workspace/Health-EC/experiments/results/t2_4_5_5_dynamic_formal_matrix/dynamic_matrix_raw.csv
+windowed_artifact=/root/workspace/Health-EC-workspace/Health-EC/experiments/results/t2_4_5_5_dynamic_formal_matrix/dynamic_windowed_raw.csv
+event_trace_artifact=/root/workspace/Health-EC-workspace/Health-EC/experiments/results/t2_4_5_5_dynamic_formal_matrix/event_trace_seed42.csv
