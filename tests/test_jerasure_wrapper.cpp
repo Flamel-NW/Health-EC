@@ -2,8 +2,10 @@
 
 #include <cassert>
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
 #include <random>
+#include <stdexcept>
 #include <vector>
 
 using healthec::ec::EcParams;
@@ -47,6 +49,14 @@ static void assert_data_eq(const std::vector<std::vector<char>>& original,
         }
     }
     std::printf("PASS [%s]\n", label);
+}
+
+static void require_true(bool ok, const char* label)
+{
+    if (!ok) {
+        std::fprintf(stderr, "FAIL [%s]\n", label);
+        std::abort();
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -95,6 +105,39 @@ static void test_no_erasure(const JerasureCodec& codec,
     assert_data_eq(data, recovered, "no_erasure");
 }
 
+static void test_decode_rejects_duplicate_erasure(
+    const JerasureCodec& codec,
+    const std::vector<std::vector<char>>& data,
+    const std::vector<std::vector<char>>& parity)
+{
+    auto all = make_all_shards(data, parity);
+    bool threw = false;
+    try {
+        codec.decode(all, {0, 0});
+    } catch (const std::invalid_argument&) {
+        threw = true;
+    }
+    require_true(threw, "reject_duplicate_erasure");
+    std::printf("PASS [reject_duplicate_erasure]\n");
+}
+
+static void test_decode_rejects_mismatched_present_size(
+    const JerasureCodec& codec,
+    const std::vector<std::vector<char>>& data,
+    const std::vector<std::vector<char>>& parity)
+{
+    auto all = make_all_shards(data, parity);
+    all[1].pop_back();
+    bool threw = false;
+    try {
+        codec.decode(all, {0});
+    } catch (const std::invalid_argument&) {
+        threw = true;
+    }
+    require_true(threw, "reject_mismatched_present_size");
+    std::printf("PASS [reject_mismatched_present_size]\n");
+}
+
 // ---------------------------------------------------------------------------
 // main
 // ---------------------------------------------------------------------------
@@ -125,6 +168,8 @@ int main() {
     test_erase_2_data(codec, data, parity);
     test_erase_1data_1parity(codec, data, parity);
     test_erase_2_parity(codec, data, parity);
+    test_decode_rejects_duplicate_erasure(codec, data, parity);
+    test_decode_rejects_mismatched_present_size(codec, data, parity);
 
     std::puts("All tests passed.");
     return 0;

@@ -121,10 +121,45 @@ struct RunResult {
     long   mig_tp, mig_fp;
 };
 
+struct TraceRequest {
+    StripeId sid;
+    double hotness;
+    std::vector<std::pair<ShardId, double>> data_lat;
+    ShardId parity_shard;
+    double parity_lat;
+};
+
+static std::vector<TraceRequest> build_trace(const std::string& tmp,
+                                             const Layout& L) {
+    DiskSimulator sim(tmp, NUM_DISKS, PROFILE_BASELINE, SEED);
+    sim.set_profile(MILD_DISK, PROFILE_MILD);
+    sim.set_profile(SEVERE_DISK, PROFILE_SEVERE);
+    WorkloadGenerator wg(NUM_STRIPES, 1.0, SEED);
+
+    std::vector<TraceRequest> trace;
+    trace.reserve(NUM_READS);
+    for (int r = 0; r < NUM_READS; ++r) {
+        StripeId sid = wg.next_stripe();
+        const auto& sl = L.stripe_layouts.at(sid);
+
+        TraceRequest req;
+        req.sid = sid;
+        req.hotness = wg.hotness(sid);
+        req.data_lat.reserve(sl.data_shards.size());
+        for (ShardId sh : sl.data_shards)
+            req.data_lat.emplace_back(sh, sim.sample_latency_ms(sl.disk_of.at(sh)));
+        req.parity_shard = sl.parity_shards[0];
+        req.parity_lat = sim.sample_latency_ms(sl.disk_of.at(req.parity_shard));
+        trace.push_back(std::move(req));
+    }
+    return trace;
+}
+
 // ── Memory simulation ─────────────────────────────────────────────────────────
 
-static RunResult run_scenario(DiskSimulator& sim, const Layout& L,
-                               WorkloadGenerator& wg, const ScoreParams& p)
+static RunResult run_scenario(const std::vector<TraceRequest>& trace,
+                              const Layout& L,
+                              const ScoreParams& p)
 {
     struct State { double S = 0.0, D = 0.0; };
     std::unordered_map<ShardId, State> st;
@@ -140,10 +175,9 @@ static RunResult run_scenario(DiskSimulator& sim, const Layout& L,
         return false;
     };
 
-    for (int r = 0; r < NUM_READS; ++r) {
-        StripeId sid = wg.next_stripe();
-        double   w_s = wg.hotness(sid);
-        const auto& sl = L.stripe_layouts.at(sid);
+    for (const auto& req : trace) {
+        double   w_s = req.hotness;
+        const auto& sl = L.stripe_layouts.at(req.sid);
 
         // Step 1: decide proactive (any data shard S_i > θ_S)
         bool proactive = false;
@@ -152,18 +186,17 @@ static RunResult run_scenario(DiskSimulator& sim, const Layout& L,
 
         if (!proactive) {
             // Phase A: k data-shard reads
-            std::vector<std::pair<ShardId, double>> data_lat;
             double stripe_lat = 0.0;
-            for (ShardId sh : sl.data_shards) {
-                double lat = sim.sample_latency_ms(sl.disk_of.at(sh));
-                data_lat.emplace_back(sh, lat);
+            for (const auto& [sh, lat] : req.data_lat) {
+                (void)sh;
                 stripe_lat = std::max(stripe_lat, lat);
             }
             lats.push_back(stripe_lat);
 
-            auto loser = compute_loser_significant(data_lat, p.loser_sig_ratio,
+            auto loser = compute_loser_significant(req.data_lat, p.loser_sig_ratio,
                                                     p.loser_sig_abs_ms);
-            for (auto& [sh, lat] : data_lat) {
+            for (auto& [sh, lat] : req.data_lat) {
+                (void)lat;
                 double ev = (loser && sh == *loser) ? 1.0 : 0.0;
                 auto& s = st[sh].S;
                 s = (1.0 - p.alpha_S) * s + p.alpha_S * w_s * ev;
@@ -173,17 +206,9 @@ static RunResult run_scenario(DiskSimulator& sim, const Layout& L,
             pro_reads++;
             if (stripe_has_slow(sl)) tp_str++; else fp_str++;
 
-            // Sample data and parity latencies
-            std::vector<std::pair<ShardId, double>> data_lat;
-            for (ShardId sh : sl.data_shards)
-                data_lat.emplace_back(sh, sim.sample_latency_ms(sl.disk_of.at(sh)));
-
-            ShardId par      = sl.parity_shards[0];
-            double  par_lat  = sim.sample_latency_ms(sl.disk_of.at(par));
-
             // First-k-complete: sort all k+1 by latency, take top k
-            std::vector<std::pair<ShardId, double>> all = data_lat;
-            all.emplace_back(par, par_lat);
+            std::vector<std::pair<ShardId, double>> all = req.data_lat;
+            all.emplace_back(req.parity_shard, req.parity_lat);
             std::sort(all.begin(), all.end(),
                       [](const auto& a, const auto& b){ return a.second < b.second; });
 
@@ -191,18 +216,15 @@ static RunResult run_scenario(DiskSimulator& sim, const Layout& L,
             std::unordered_map<ShardId, bool> in_k;
             for (int i = 0; i < K; ++i) {
                 in_k[all[i].first] = true;
-                if (all[i].first == par) parity_in_k = true;
+                if (all[i].first == req.parity_shard) parity_in_k = true;
             }
             // k-th shard latency = stripe end-to-end
             lats.push_back(all[K - 1].second);
 
             // Phase B score updates
-            for (auto& [sh, lat] : data_lat) {
-                bool straggler = !in_k.count(sh);
-                double shard_lat_eff = straggler
-                    ? std::numeric_limits<double>::max() : lat;
+            for (auto& [sh, lat] : req.data_lat) {
                 double win = (parity_in_k &&
-                              parity_won(par_lat, shard_lat_eff, p.parity_win_abs_ms))
+                              parity_won(req.parity_lat, lat, p.parity_win_abs_ms))
                              ? 1.0 : 0.0;
 
                 auto& s = st[sh].S;
@@ -220,29 +242,22 @@ static RunResult run_scenario(DiskSimulator& sim, const Layout& L,
 
     std::sort(lats.begin(), lats.end());
     return {percentile(lats, 0.50), percentile(lats, 0.95), percentile(lats, 0.99),
-            pro_reads, NUM_READS, tp_str, fp_str, mig_tp, mig_fp};
-}
-
-static WorkloadGenerator make_wg() {
-    return WorkloadGenerator(NUM_STRIPES, 1.0, SEED);
+            pro_reads, static_cast<long>(trace.size()), tp_str, fp_str, mig_tp, mig_fp};
 }
 
 // ── main ──────────────────────────────────────────────────────────────────────
 
 int main() {
     static const std::string TMP = "/tmp/healthec_calibrate_thresholds";
+    std::filesystem::remove_all(TMP);
     std::filesystem::create_directories(TMP);
 
-    DiskSimulator sim(TMP, NUM_DISKS, PROFILE_BASELINE, SEED);
-    sim.set_profile(MILD_DISK,   PROFILE_MILD);
-    sim.set_profile(SEVERE_DISK, PROFILE_SEVERE);
-
     const Layout L = build_layout();
+    const auto trace = build_trace(TMP, L);
 
     // Baseline: θ_S = ∞ (proactive never triggered)
     ScoreParams bp; bp.theta_S = 1e18; bp.theta_D = 1e18;
-    auto bwg     = make_wg();
-    auto baseline = run_scenario(sim, L, bwg, bp);
+    auto baseline = run_scenario(trace, L, bp);
 
     std::cout << "calibrate_thresholds  seed=" << SEED
               << "  reads=" << NUM_READS
@@ -256,6 +271,7 @@ int main() {
     // Hard-constraint thresholds (may be adjusted after seeing data)
     constexpr double PREC_MIN   = 0.80;   // stripe-level precision
     constexpr double BW_MAX_PCT = 15.0;   // bandwidth overhead %
+    constexpr double P99_IMP_MIN = 0.0;   // do not select regressions
 
     // Column header
     std::cout << std::left
@@ -298,18 +314,20 @@ int main() {
                     p.loser_sig_abs_ms = a_abs;
                     p.parity_win_abs_ms= b_abs;
 
-                    auto wg = make_wg();
-                    auto r  = run_scenario(sim, L, wg, p);
+                    auto r  = run_scenario(trace, L, p);
 
                     long  trig = r.tp_stripe + r.fp_stripe;
                     double prec = (trig > 0)
                         ? static_cast<double>(r.tp_stripe) / trig : 0.0;
                     double bw  = static_cast<double>(r.proactive_reads)
-                                 / r.total_reads * 100.0;
+                                 / static_cast<double>(r.total_reads * K) * 100.0;
                     double imp = (baseline.p99 > 0.0)
                         ? (baseline.p99 - r.p99) / baseline.p99 * 100.0 : 0.0;
 
-                    bool feasible = (prec >= PREC_MIN) && (bw <= BW_MAX_PCT);
+                    bool feasible = (prec >= PREC_MIN) &&
+                                    (bw <= BW_MAX_PCT) &&
+                                    (r.mig_fp == 0) &&
+                                    (imp >= P99_IMP_MIN);
                     bool best = false;
                     if (feasible && imp > best_imp) {
                         best_imp = imp;
@@ -344,13 +362,15 @@ int main() {
 
     std::cout << "\n=== Summary ===\n";
     std::cout << "Constraints: stripe-precision>=" << PREC_MIN
-              << "  BW<=" << BW_MAX_PCT << "%\n";
+              << "  BW<=" << BW_MAX_PCT
+              << "%  migFP=0  P99_imp>=" << P99_IMP_MIN << "%\n";
     if (best_imp > -1e8) {
         std::cout << "Best: A_abs=" << best_a << "ms  B_abs=" << best_b << "ms"
                   << "  θ_S=" << best_ts << "  θ_D=" << best_td
                   << "  P99_imp=" << best_imp << "%"
                   << "  BW="
-                  << static_cast<double>(best_res.proactive_reads)/best_res.total_reads*100.0
+                  << static_cast<double>(best_res.proactive_reads)
+                       / static_cast<double>(best_res.total_reads * K) * 100.0
                   << "%\n";
     } else {
         std::cout << "No combination satisfied both constraints.\n";

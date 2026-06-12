@@ -88,9 +88,17 @@ std::vector<std::vector<char>> JerasureCodec::decode(
             "decode: all_shards must contain k+m=" + std::to_string(n) + " slots");
     }
 
+    std::unordered_set<int> erased_set;
+    erased_set.reserve(erased_indices.size());
+    for (int idx : erased_indices) {
+        if (idx < 0 || idx >= n)
+            throw std::invalid_argument("decode: erased index out of range");
+        if (!erased_set.insert(idx).second)
+            throw std::invalid_argument("decode: duplicate erased index");
+    }
+
     // Infer shard_size from the first non-erased, non-empty slot.
     // Avoids silently using size=0 when shard 0 is an erased slot (M2).
-    std::unordered_set<int> erased_set(erased_indices.begin(), erased_indices.end());
     int shard_size = 0;
     for (int i = 0; i < n; ++i) {
         if (!erased_set.count(i) && !all_shards[i].empty()) {
@@ -107,11 +115,16 @@ std::vector<std::vector<char>> JerasureCodec::decode(
             "decode: shard_size must be a multiple of sizeof(long)");
     }
 
+    for (int i = 0; i < n; ++i) {
+        if (erased_set.count(i)) continue;
+        if (static_cast<int>(all_shards[i].size()) != shard_size) {
+            throw std::invalid_argument(
+                "decode: all present shards must have the same non-zero size");
+        }
+    }
+
     // Ensure erased slots have a buffer of the right size (content will be overwritten).
     for (int idx : erased_indices) {
-        if (idx < 0 || idx >= n) {
-            throw std::invalid_argument("decode: erased index out of range");
-        }
         all_shards[idx].assign(shard_size, 0);
     }
 

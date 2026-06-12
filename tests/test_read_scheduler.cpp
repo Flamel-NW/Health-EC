@@ -182,6 +182,75 @@ static void test_parity_win_updates_death() {
     std::puts("PASS test_parity_win_updates_death");
 }
 
+// ── test 5b: parity_win_abs_blocks_straggler_close_race ─────────────────────
+// A straggler's actual reported latency must still satisfy parity_win_abs_ms.
+static void test_parity_win_abs_blocks_straggler_close_race() {
+    ScoreParams p;
+    p.alpha_S = 0.5;
+    p.alpha_D = 0.1;
+    p.parity_win_abs_ms = 15.0;
+    ScoreManager sm(p);
+    seed_slowness_above_threshold(sm, /*shard=*/0);
+
+    sm.update_health(0, 0.0, 0.0, 0.0);
+    sm.update_health(1, 0.0, 0.0, 0.0);
+    sm.update_health(2, 0.0, 0.0, 0.0);
+
+    ShardReader reader = [](DiskId, ShardId shard, bool is_parity) -> ShardReadResult {
+        if (shard == 0) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(40));
+            return {shard, is_parity, 12.0};
+        }
+        return {shard, is_parity, is_parity ? 1.0 : 10.0};
+    };
+
+    ReadScheduler rs(2, 1, sm, reader);
+    auto lay = make_layout_2_1();
+    auto res = rs.read_stripe(0, lay);
+    rs.flush_score_updates();
+
+    CHECK(res.proactive_mode);
+    CHECK(res.stragglers.size() == 1 && res.stragglers[0] == 0);
+    CHECK(near(sm.get_death(0), 0.0));
+    CHECK(near(sm.get_death(1), 0.0));
+
+    std::puts("PASS test_parity_win_abs_blocks_straggler_close_race");
+}
+
+// ── test 5c: parity_win_abs_allows_straggler_large_win ───────────────────────
+// The same straggler path must still count when parity wins by enough margin.
+static void test_parity_win_abs_allows_straggler_large_win() {
+    ScoreParams p;
+    p.alpha_S = 0.5;
+    p.alpha_D = 0.1;
+    p.parity_win_abs_ms = 15.0;
+    ScoreManager sm(p);
+    seed_slowness_above_threshold(sm, /*shard=*/0);
+
+    sm.update_health(0, 0.0, 0.0, 0.0);
+    sm.update_health(1, 0.0, 0.0, 0.0);
+    sm.update_health(2, 0.0, 0.0, 0.0);
+
+    ShardReader reader = [](DiskId, ShardId shard, bool is_parity) -> ShardReadResult {
+        if (shard == 0) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(40));
+            return {shard, is_parity, 40.0};
+        }
+        return {shard, is_parity, 1.0};
+    };
+
+    ReadScheduler rs(2, 1, sm, reader);
+    auto lay = make_layout_2_1();
+    auto res = rs.read_stripe(0, lay);
+    rs.flush_score_updates();
+
+    CHECK(res.proactive_mode);
+    CHECK(res.stragglers.size() == 1 && res.stragglers[0] == 0);
+    CHECK(sm.get_death(0) > 0.0);
+
+    std::puts("PASS test_parity_win_abs_allows_straggler_large_win");
+}
+
 // ── test 6: parity_straggler_no_death ────────────────────────────────────────
 // Proactive mode, parity is the straggler (all data shards finish first).
 // → no parity_win_event → D_i must remain 0 for all data shards.
@@ -288,6 +357,8 @@ int main() {
     test_first_k_complete_drops_straggler();
     test_score_loser_updated();
     test_parity_win_updates_death();
+    test_parity_win_abs_blocks_straggler_close_race();
+    test_parity_win_abs_allows_straggler_large_win();
     test_parity_straggler_no_death();
     test_flush_score_updates();
     test_concurrent_read_stripe();

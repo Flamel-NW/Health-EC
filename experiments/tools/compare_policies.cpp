@@ -14,6 +14,7 @@
 #include "sim/workload_generator.h"
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <cstdint>
 #include <exception>
@@ -39,6 +40,7 @@ static constexpr int      DEFAULT_NUM_READS   = 20000;
 static constexpr uint64_t DEFAULT_SEED        = 42;
 static constexpr double   DEFAULT_ZIPF_S      = 1.0;
 static constexpr double   DEFAULT_TIMEOUT_MS  = 30.0;
+static constexpr double   DYNAMIC_DEFAULT_TIMEOUT_MS = 15.0;
 
 static constexpr int MILD_DISK   = 8;
 static constexpr int SEVERE_DISK = 9;
@@ -164,6 +166,7 @@ struct RuntimeConfig {
     PolicySelection policy_selection = PolicySelection::All;
     PolicyKind single_policy = PolicyKind::VanillaEC;
     double timeout_ms = DEFAULT_TIMEOUT_MS;
+    bool timeout_ms_explicit = false;
     OutputFormat format = OutputFormat::Table;
 };
 
@@ -270,6 +273,7 @@ static RuntimeConfig parse_args(int argc, char** argv) {
             cfg.timeout_ms = parse_double_value(require_value(arg), arg);
             if (cfg.timeout_ms < 0.0)
                 throw std::invalid_argument("--timeout-ms must be non-negative");
+            cfg.timeout_ms_explicit = true;
         } else if (arg == "--format") {
             std::string value = require_value(arg);
             if (value == "table") {
@@ -292,6 +296,11 @@ static RuntimeConfig parse_args(int argc, char** argv) {
 
 static bool is_dynamic_scenario(const RuntimeConfig& cfg) {
     return cfg.scenario == "dynamic_degradation";
+}
+
+static void apply_runtime_defaults(RuntimeConfig& cfg) {
+    if (is_dynamic_scenario(cfg) && !cfg.timeout_ms_explicit)
+        cfg.timeout_ms = DYNAMIC_DEFAULT_TIMEOUT_MS;
 }
 
 static void validate_runtime_config(const RuntimeConfig& cfg) {
@@ -512,11 +521,8 @@ static RunResult run_policy(DiskSimulator& sim, const Layout& layout,
             latencies.push_back(all[K - 1].second);
 
             for (const auto& [sh, lat] : data_lat) {
-                bool straggler = !in_k.count(sh);
-                double shard_lat_eff = straggler
-                    ? std::numeric_limits<double>::max() : lat;
                 double win = (parity_in_k &&
-                              parity_won(parity_lat, shard_lat_eff,
+                              parity_won(parity_lat, lat,
                                          p.parity_win_abs_ms))
                     ? 1.0 : 0.0;
 
@@ -573,6 +579,7 @@ struct LatentShard {
     bool is_parity;
     DiskState state;
     double latency_ms;
+    std::array<double, NUM_DISKS> latency_by_disk{};
 };
 
 struct LatentRequest {
@@ -627,6 +634,7 @@ struct DynamicRunResult {
 struct EventShardStats {
     int read_count = 0;
     bool migrated = false;
+    bool trigger_recorded = false;
 };
 
 static bool is_migration_positive(DiskState state) {
@@ -705,28 +713,75 @@ static bool disk_has_prior_positive_end(
 }
 
 static bool is_post_slow_shard(
-    const LatentShard& shard, const LatentWorld& world, int window_id)
+    DiskId disk, DiskState state, const LatentWorld& world, int window_id)
 {
-    return !is_migration_positive(shard.state) &&
-           disk_has_prior_positive_end(world.schedule, shard.disk, window_id);
+    return !is_migration_positive(state) &&
+           disk_has_prior_positive_end(world.schedule, disk, window_id);
 }
 
-static bool request_has_positive_data(const LatentRequest& req) {
-    for (const auto& sh : req.data)
-        if (is_migration_positive(sh.state)) return true;
+static DiskId logical_disk_for(const std::unordered_map<ShardId, DiskId>& logical_disk,
+                               const LatentShard& shard)
+{
+    auto it = logical_disk.find(shard.shard);
+    return (it != logical_disk.end()) ? it->second : shard.disk;
+}
+
+static double latency_on_disk(const LatentShard& shard, DiskId disk) {
+    if (disk < 0 || disk >= NUM_DISKS)
+        throw std::out_of_range("latency_on_disk: disk out of range");
+    return shard.latency_by_disk[disk];
+}
+
+static std::unordered_map<ShardId, DiskId> initial_logical_disks(
+    const Layout& layout)
+{
+    std::unordered_map<ShardId, DiskId> out;
+    for (const auto& [sid, sl] : layout.stripe_layouts) {
+        (void)sid;
+        for (const auto& [sh, disk] : sl.disk_of)
+            out[sh] = disk;
+    }
+    return out;
+}
+
+static bool request_has_positive_data(
+    const LatentWorld& world,
+    const LatentRequest& req,
+    const std::unordered_map<ShardId, DiskId>& logical_disk)
+{
+    for (const auto& sh : req.data) {
+        DiskId disk = logical_disk_for(logical_disk, sh);
+        if (is_migration_positive(
+                state_for_disk_window(world.schedule, disk, req.window_id))) {
+            return true;
+        }
+    }
     return false;
 }
 
-static bool request_has_recovery_data(const LatentRequest& req) {
-    for (const auto& sh : req.data)
-        if (sh.state == DiskState::Recovery) return true;
+static bool request_has_recovery_data(
+    const LatentWorld& world,
+    const LatentRequest& req,
+    const std::unordered_map<ShardId, DiskId>& logical_disk)
+{
+    for (const auto& sh : req.data) {
+        DiskId disk = logical_disk_for(logical_disk, sh);
+        if (state_for_disk_window(world.schedule, disk, req.window_id) ==
+            DiskState::Recovery) {
+            return true;
+        }
+    }
     return false;
 }
 
 static bool request_has_post_slow_data(const LatentRequest& req,
-                                       const LatentWorld& world) {
-    for (const auto& sh : req.data)
-        if (is_post_slow_shard(sh, world, req.window_id)) return true;
+                                       const LatentWorld& world,
+                                       const std::unordered_map<ShardId, DiskId>& logical_disk) {
+    for (const auto& sh : req.data) {
+        DiskId disk = logical_disk_for(logical_disk, sh);
+        DiskState state = state_for_disk_window(world.schedule, disk, req.window_id);
+        if (is_post_slow_shard(disk, state, world, req.window_id)) return true;
+    }
     return false;
 }
 
@@ -770,14 +825,28 @@ static LatentWorld build_dynamic_world(const RuntimeConfig& runtime,
         for (ShardId sh : sl.data_shards) {
             DiskId disk = sl.disk_of.at(sh);
             DiskState state = state_for_disk_window(world.schedule, disk, window_id);
-            sim.set_profile(disk, profile_for_state(state));
-            req.data.push_back({sh, disk, false, state, sim.sample_latency_ms(disk)});
+            LatentShard latent{.shard=sh, .disk=disk, .is_parity=false,
+                                .state=state, .latency_ms=0.0};
+            for (DiskId d = 0; d < NUM_DISKS; ++d) {
+                DiskState disk_state = state_for_disk_window(world.schedule, d, window_id);
+                sim.set_profile(d, profile_for_state(disk_state));
+                latent.latency_by_disk[d] = sim.sample_latency_ms(d);
+            }
+            latent.latency_ms = latent.latency_by_disk[disk];
+            req.data.push_back(std::move(latent));
         }
         for (ShardId sh : sl.parity_shards) {
             DiskId disk = sl.disk_of.at(sh);
             DiskState state = state_for_disk_window(world.schedule, disk, window_id);
-            sim.set_profile(disk, profile_for_state(state));
-            req.parity.push_back({sh, disk, true, state, sim.sample_latency_ms(disk)});
+            LatentShard latent{.shard=sh, .disk=disk, .is_parity=true,
+                                .state=state, .latency_ms=0.0};
+            for (DiskId d = 0; d < NUM_DISKS; ++d) {
+                DiskState disk_state = state_for_disk_window(world.schedule, d, window_id);
+                sim.set_profile(d, profile_for_state(disk_state));
+                latent.latency_by_disk[d] = sim.sample_latency_ms(d);
+            }
+            latent.latency_ms = latent.latency_by_disk[disk];
+            req.parity.push_back(std::move(latent));
         }
 
         world.requests.push_back(std::move(req));
@@ -788,12 +857,15 @@ static LatentWorld build_dynamic_world(const RuntimeConfig& runtime,
 }
 
 static std::vector<std::pair<ShardId, double>> latent_data_latencies(
-    const LatentRequest& req)
+    const LatentRequest& req,
+    const std::unordered_map<ShardId, DiskId>& logical_disk)
 {
     std::vector<std::pair<ShardId, double>> out;
     out.reserve(req.data.size());
-    for (const auto& sh : req.data)
-        out.emplace_back(sh.shard, sh.latency_ms);
+    for (const auto& sh : req.data) {
+        DiskId disk = logical_disk_for(logical_disk, sh);
+        out.emplace_back(sh.shard, latency_on_disk(sh, disk));
+    }
     return out;
 }
 
@@ -812,13 +884,17 @@ static const LatentShard* slowest_data_shard(const LatentRequest& req) {
 }
 
 static bool positive_data_bypassed_by_parity(
+    const LatentWorld& world,
     const LatentRequest& req,
+    const std::unordered_map<ShardId, DiskId>& logical_disk,
     const std::unordered_map<ShardId, bool>& in_k,
     bool parity_in_k)
 {
     if (!parity_in_k) return false;
     for (const auto& sh : req.data) {
-        if (is_migration_positive(sh.state) && !in_k.count(sh.shard))
+        DiskId disk = logical_disk_for(logical_disk, sh);
+        DiskState state = state_for_disk_window(world.schedule, disk, req.window_id);
+        if (is_migration_positive(state) && !in_k.count(sh.shard))
             return true;
     }
     return false;
@@ -844,7 +920,8 @@ static void record_data_reads(DynamicRunResult& result, const LatentRequest& req
 
 static void record_extra_parity_read(DynamicRunResult& result,
                                      const LatentWorld& world,
-                                     const LatentRequest& req)
+                                     const LatentRequest& req,
+                                     const std::unordered_map<ShardId, DiskId>& logical_disk)
 {
     result.aggregate.issued_shard_reads++;
     result.aggregate.parity_reads++;
@@ -857,9 +934,9 @@ static void record_extra_parity_read(DynamicRunResult& result,
 
     if (req.window_id < FIRST_DYNAMIC_ONSET_WINDOW)
         result.pre_slowdown_parity_reads++;
-    if (request_has_recovery_data(req))
+    if (request_has_recovery_data(world, req, logical_disk))
         result.recovery_parity_reads++;
-    if (request_has_post_slow_data(req, world))
+    if (request_has_post_slow_data(req, world, logical_disk))
         result.recovery_regret_reads++;
 }
 
@@ -876,40 +953,86 @@ static void record_latency(DynamicRunResult& result,
     result.windows.at(req.window_id).latencies.push_back(latency_ms);
 }
 
+static void update_observed_health(std::array<double, NUM_DISKS>& disk_health,
+                                   DiskId disk,
+                                   double latency_ms,
+                                   const ScoreParams& params)
+{
+    double normalized_latency = std::min(std::max(latency_ms / 100.0, 0.0), 1.0);
+    double sample_health = 1.0 - normalized_latency;
+    disk_health[disk] = (1.0 - params.alpha_H) * disk_health[disk] +
+                        params.alpha_H * sample_health;
+}
+
+static DiskId select_migration_target(
+    const LatentRequest& req,
+    const std::unordered_map<ShardId, DiskId>& logical_disk,
+    const std::array<double, NUM_DISKS>& disk_health,
+    DiskId current_disk)
+{
+    std::array<bool, NUM_DISKS> used{};
+    for (const auto& sh : req.data)
+        used[logical_disk_for(logical_disk, sh)] = true;
+    for (const auto& sh : req.parity)
+        used[sh.disk] = true;
+
+    used[current_disk] = false;
+    DiskId target = -1;
+    double target_health = disk_health[current_disk];
+    for (DiskId d = 0; d < NUM_DISKS; ++d) {
+        if (used[d]) continue;
+        if (disk_health[d] > target_health) {
+            target = d;
+            target_health = disk_health[d];
+        }
+    }
+    return target;
+}
+
 static void record_migration_trigger(
     DynamicRunResult& result,
     const LatentWorld& world,
     const LatentRequest& req,
     const LatentShard& shard,
+    DiskId current_disk,
     std::unordered_map<int, std::unordered_map<ShardId, EventShardStats>>& event_stats)
 {
     result.aggregate.migration_triggers++;
     result.windows.at(req.window_id).migration_triggers++;
 
     const ScheduleEvent* e = event_for_disk_window(
-        world.schedule, shard.disk, req.window_id);
-    bool tp = e && is_migration_positive(e->state);
-    if (tp) {
-        result.migration_true_positives++;
-        result.windows.at(req.window_id).migration_true_positives++;
-        event_stats[e->event_id][shard.shard].migrated = true;
-    } else {
-        result.aggregate.migration_false_positives++;
-        result.windows.at(req.window_id).migration_false_positives++;
-    }
+        world.schedule, current_disk, req.window_id);
+    DiskState state = e ? e->state : DiskState::Healthy;
+    int event_key = e ? e->event_id : (-1000 - current_disk);
+    auto& stats = event_stats[event_key][shard.shard];
 
-    if (is_post_slow_shard(shard, world, req.window_id))
+    if (!stats.trigger_recorded) {
+        stats.trigger_recorded = true;
+        if (is_migration_positive(state)) {
+            result.migration_true_positives++;
+            result.windows.at(req.window_id).migration_true_positives++;
+        } else {
+            result.aggregate.migration_false_positives++;
+            result.windows.at(req.window_id).migration_false_positives++;
+        }
+    }
+    if (is_migration_positive(state))
+        stats.migrated = true;
+
+    if (is_post_slow_shard(current_disk, state, world, req.window_id))
         result.recovery_regret_reads++;
 }
 
 static void record_positive_event_reads(
     const LatentWorld& world,
     const LatentRequest& req,
+    const std::unordered_map<ShardId, DiskId>& logical_disk,
     std::unordered_map<int, std::unordered_map<ShardId, EventShardStats>>& event_stats)
 {
     for (const auto& sh : req.data) {
+        DiskId disk = logical_disk_for(logical_disk, sh);
         const ScheduleEvent* e = event_for_disk_window(
-            world.schedule, sh.disk, req.window_id);
+            world.schedule, disk, req.window_id);
         if (e && is_migration_positive(e->state))
             event_stats[e->event_id][sh.shard].read_count++;
     }
@@ -961,10 +1084,14 @@ static void finalize_dynamic_result(DynamicRunResult& result,
 }
 
 static DynamicRunResult run_dynamic_policy(const LatentWorld& world,
+                                           const Layout& layout,
                                            const PolicyConfig& config)
 {
     struct ScoreState { double S = 0.0; double D = 0.0; };
     std::unordered_map<ShardId, ScoreState> scores;
+    std::unordered_map<ShardId, DiskId> logical_disk = initial_logical_disks(layout);
+    std::array<double, NUM_DISKS> disk_health{};
+    disk_health.fill(1.0);
     std::unordered_map<int, std::unordered_map<ShardId, EventShardStats>> event_stats;
 
     DynamicRunResult result;
@@ -978,11 +1105,21 @@ static DynamicRunResult run_dynamic_policy(const LatentWorld& world,
     for (const auto& req : world.requests) {
         record_data_reads(result, req);
         if (config.kind == PolicyKind::HealthEC)
-            record_positive_event_reads(world, req, event_stats);
+            record_positive_event_reads(world, req, logical_disk, event_stats);
 
-        auto data_lat = latent_data_latencies(req);
+        auto data_lat = latent_data_latencies(req, logical_disk);
         ShardId parity_shard = req.parity.front().shard;
-        double parity_lat = req.parity.front().latency_ms;
+        DiskId parity_disk = logical_disk_for(logical_disk, req.parity.front());
+        double parity_lat = latency_on_disk(req.parity.front(), parity_disk);
+
+        if (config.kind == PolicyKind::HealthEC) {
+            for (const auto& sh : req.data) {
+                DiskId disk = logical_disk_for(logical_disk, sh);
+                update_observed_health(disk_health, disk,
+                                       latency_on_disk(sh, disk),
+                                       config.health_ec_params);
+            }
+        }
 
         if (config.kind == PolicyKind::VanillaEC) {
             double stripe_lat = 0.0;
@@ -995,7 +1132,7 @@ static DynamicRunResult run_dynamic_policy(const LatentWorld& world,
         }
 
         if (config.kind == PolicyKind::LateBinding) {
-            record_extra_parity_read(result, world, req);
+            record_extra_parity_read(result, world, req, logical_disk);
             auto all = sorted_with_parity(data_lat, parity_shard, parity_lat);
 
             bool parity_in_k = false;
@@ -1009,7 +1146,8 @@ static DynamicRunResult run_dynamic_policy(const LatentWorld& world,
                 record_decode(result, req);
             if (req.read_index >= first_onset_read &&
                 result.first_mitigation_latency_reads < 0 &&
-                positive_data_bypassed_by_parity(req, in_k, parity_in_k)) {
+                positive_data_bypassed_by_parity(
+                    world, req, logical_disk, in_k, parity_in_k)) {
                 result.first_mitigation_latency_reads =
                     req.read_index - first_onset_read;
             }
@@ -1036,9 +1174,9 @@ static DynamicRunResult run_dynamic_policy(const LatentWorld& world,
                 continue;
             }
 
-            record_extra_parity_read(result, world, req);
+            record_extra_parity_read(result, world, req, logical_disk);
             if (req.read_index >= first_onset_read &&
-                request_has_positive_data(req) &&
+                request_has_positive_data(world, req, logical_disk) &&
                 result.first_detection_latency_reads < 0) {
                 result.first_detection_latency_reads =
                     req.read_index - first_onset_read;
@@ -1092,9 +1230,10 @@ static DynamicRunResult run_dynamic_policy(const LatentWorld& world,
             continue;
         }
 
-        record_extra_parity_read(result, world, req);
+        record_extra_parity_read(result, world, req, logical_disk);
+        update_observed_health(disk_health, parity_disk, parity_lat, p);
         if (req.read_index >= first_onset_read &&
-            request_has_positive_data(req) &&
+            request_has_positive_data(world, req, logical_disk) &&
             result.first_detection_latency_reads < 0) {
             result.first_detection_latency_reads = req.read_index - first_onset_read;
         }
@@ -1112,7 +1251,8 @@ static DynamicRunResult run_dynamic_policy(const LatentWorld& world,
             record_decode(result, req);
         if (req.read_index >= first_onset_read &&
             result.first_mitigation_latency_reads < 0 &&
-            positive_data_bypassed_by_parity(req, in_k, parity_in_k)) {
+            positive_data_bypassed_by_parity(
+                world, req, logical_disk, in_k, parity_in_k)) {
             result.first_mitigation_latency_reads =
                 req.read_index - first_onset_read;
         }
@@ -1120,11 +1260,8 @@ static DynamicRunResult run_dynamic_policy(const LatentWorld& world,
         record_latency(result, req, all[K - 1].second);
 
         for (const auto& [sh, lat] : data_lat) {
-            bool straggler = !in_k.count(sh);
-            double shard_lat_eff = straggler
-                ? std::numeric_limits<double>::max() : lat;
             double win = (parity_in_k &&
-                          parity_won(parity_lat, shard_lat_eff,
+                          parity_won(parity_lat, lat,
                                      p.parity_win_abs_ms))
                 ? 1.0 : 0.0;
 
@@ -1134,9 +1271,16 @@ static DynamicRunResult run_dynamic_policy(const LatentWorld& world,
 
             if (st.D > p.theta_D) {
                 const LatentShard* data_shard = find_data_shard(req, sh);
-                if (data_shard)
+                if (data_shard) {
+                    DiskId current_disk = logical_disk_for(logical_disk, *data_shard);
+                    DiskId target = select_migration_target(
+                        req, logical_disk, disk_health, current_disk);
+                    if (target == -1)
+                        continue;
                     record_migration_trigger(
-                        result, world, req, *data_shard, event_stats);
+                        result, world, req, *data_shard, current_disk, event_stats);
+                    logical_disk[sh] = target;
+                }
                 st.S = 0.0;
                 st.D = 0.0;
             }
@@ -1377,6 +1521,7 @@ int main(int argc, char** argv) {
     RuntimeConfig runtime;
     try {
         runtime = parse_args(argc, argv);
+        apply_runtime_defaults(runtime);
         validate_runtime_config(runtime);
     } catch (const std::exception& e) {
         std::cerr << "compare_policies: " << e.what() << "\n";
@@ -1406,7 +1551,7 @@ int main(int argc, char** argv) {
 
         for (PolicyKind kind : policies) {
             configs.push_back(make_policy_config(kind, runtime, health_params));
-            results.push_back(run_dynamic_policy(world, configs.back()));
+            results.push_back(run_dynamic_policy(world, layout, configs.back()));
         }
 
         double vanilla_p99 = 0.0;
@@ -1414,7 +1559,8 @@ int main(int argc, char** argv) {
             vanilla_p99 = results.front().aggregate.p99;
         } else {
             PolicyConfig vanilla_config{.kind=PolicyKind::VanillaEC};
-            vanilla_p99 = run_dynamic_policy(world, vanilla_config).aggregate.p99;
+            vanilla_p99 =
+                run_dynamic_policy(world, layout, vanilla_config).aggregate.p99;
         }
 
         if (runtime.format == OutputFormat::Table) {

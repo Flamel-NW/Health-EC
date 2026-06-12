@@ -1,6 +1,7 @@
 #include "sim/disk_simulator.h"
 
 #include <chrono>
+#include <cmath>
 #include <fstream>
 #include <stdexcept>
 #include <thread>
@@ -9,16 +10,42 @@ namespace fs = std::filesystem;
 
 namespace healthec::sim {
 
+static void validate_profile(const DiskProfile& profile) {
+    auto finite_nonnegative = [](double value) {
+        return std::isfinite(value) && value >= 0.0;
+    };
+
+    if (!finite_nonnegative(profile.base_mean_ms) ||
+        !finite_nonnegative(profile.base_jitter_ms) ||
+        !finite_nonnegative(profile.slow_mean_ms) ||
+        !finite_nonnegative(profile.slow_jitter_ms) ||
+        !finite_nonnegative(profile.spike_ms) ||
+        !std::isfinite(profile.spike_prob) ||
+        profile.spike_prob < 0.0 || profile.spike_prob > 1.0) {
+        throw std::invalid_argument("DiskSimulator: invalid DiskProfile");
+    }
+}
+
+static double sample_normal_or_constant(std::mt19937& rng,
+                                        double mean,
+                                        double jitter) {
+    if (jitter == 0.0)
+        return mean;
+    std::normal_distribution<double> normal(mean, jitter);
+    return normal(rng);
+}
+
 // ── Constructor ───────────────────────────────────────────────────────────────
 
 DiskSimulator::DiskSimulator(std::string base_dir, int num_disks,
                              DiskProfile default_profile, uint64_t seed)
     : base_dir_(std::move(base_dir)),
       num_disks_(num_disks),
-      profiles_(num_disks, default_profile),
+      profiles_(num_disks > 0 ? num_disks : 0, default_profile),
       rng_(seed) {
     if (num_disks_ < 1)
         throw std::invalid_argument("num_disks must be >= 1");
+    validate_profile(default_profile);
     fs::create_directories(base_dir_);
 }
 
@@ -77,8 +104,7 @@ double DiskSimulator::sample_latency_ms(core::DiskId disk) {
     double lat;
     {
         std::lock_guard lg(rng_mu_);
-        std::normal_distribution<double> normal(mean, jitter);
-        lat = normal(rng_);
+        lat = sample_normal_or_constant(rng_, mean, jitter);
 
         if (profile.slow_mode && profile.spike_prob > 0.0) {
             std::bernoulli_distribution spike(profile.spike_prob);
@@ -149,6 +175,7 @@ core::ShardMover DiskSimulator::make_mover() {
 void DiskSimulator::set_profile(core::DiskId disk, DiskProfile profile) {
     if (disk < 0 || disk >= num_disks_)
         throw std::out_of_range("DiskSimulator: DiskId out of range");
+    validate_profile(profile);
     std::unique_lock lock(profiles_mu_);
     profiles_[disk] = profile;
 }
