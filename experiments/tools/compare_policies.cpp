@@ -27,6 +27,8 @@
 #include <unordered_map>
 #include <vector>
 
+#include <unistd.h>
+
 using namespace healthec::core;
 using namespace healthec::sim;
 
@@ -85,8 +87,8 @@ static ShardId make_shard(int stripe, int idx) { return stripe * (K + M) + idx; 
 
 static ScoreParams locked_health_ec_params() {
     ScoreParams p;
-    p.theta_S = 2.0;
-    p.theta_D = 4.0;
+    p.theta_S = 1.7;
+    p.theta_D = 1.7;
     p.loser_sig_ratio = 0.0;
     p.loser_sig_abs_ms = 15.0;
     p.parity_win_abs_ms = 15.0;
@@ -100,6 +102,13 @@ static void configure_slow_disks(DiskSimulator& sim) {
 
 static WorkloadGenerator make_workload(int num_stripes, double zipf_s, uint64_t seed) {
     return WorkloadGenerator(num_stripes, zipf_s, seed);
+}
+
+static std::string runtime_tmp_dir(const std::string& prefix, uint64_t seed) {
+    auto path = std::filesystem::temp_directory_path() /
+                (prefix + "_" + std::to_string(seed) + "_" +
+                 std::to_string(static_cast<long long>(::getpid())));
+    return path.string();
 }
 
 // Layout.
@@ -167,6 +176,7 @@ struct RuntimeConfig {
     PolicyKind single_policy = PolicyKind::VanillaEC;
     double timeout_ms = DEFAULT_TIMEOUT_MS;
     bool timeout_ms_explicit = false;
+    ScoreParams health_ec_params = locked_health_ec_params();
     OutputFormat format = OutputFormat::Table;
 };
 
@@ -235,6 +245,22 @@ static double parse_double_value(const std::string& value, const std::string& na
     return parsed;
 }
 
+static double parse_nonnegative_double(const std::string& value,
+                                       const std::string& name) {
+    double parsed = parse_double_value(value, name);
+    if (parsed < 0.0)
+        throw std::invalid_argument(name + " must be non-negative");
+    return parsed;
+}
+
+static double parse_positive_double(const std::string& value,
+                                    const std::string& name) {
+    double parsed = parse_double_value(value, name);
+    if (parsed <= 0.0)
+        throw std::invalid_argument(name + " must be positive");
+    return parsed;
+}
+
 static RuntimeConfig parse_args(int argc, char** argv) {
     RuntimeConfig cfg;
     for (int i = 1; i < argc; ++i) {
@@ -270,10 +296,20 @@ static RuntimeConfig parse_args(int argc, char** argv) {
                 cfg.single_policy = parse_policy_kind(value);
             }
         } else if (arg == "--timeout-ms") {
-            cfg.timeout_ms = parse_double_value(require_value(arg), arg);
-            if (cfg.timeout_ms < 0.0)
-                throw std::invalid_argument("--timeout-ms must be non-negative");
+            cfg.timeout_ms = parse_nonnegative_double(require_value(arg), arg);
             cfg.timeout_ms_explicit = true;
+        } else if (arg == "--health-theta-s") {
+            cfg.health_ec_params.theta_S =
+                parse_positive_double(require_value(arg), arg);
+        } else if (arg == "--health-theta-d") {
+            cfg.health_ec_params.theta_D =
+                parse_positive_double(require_value(arg), arg);
+        } else if (arg == "--health-loser-sig-abs-ms") {
+            cfg.health_ec_params.loser_sig_abs_ms =
+                parse_nonnegative_double(require_value(arg), arg);
+        } else if (arg == "--health-parity-win-abs-ms") {
+            cfg.health_ec_params.parity_win_abs_ms =
+                parse_nonnegative_double(require_value(arg), arg);
         } else if (arg == "--format") {
             std::string value = require_value(arg);
             if (value == "table") {
@@ -548,7 +584,7 @@ static RunResult run_one_policy(const RuntimeConfig& runtime,
                                 const Layout& layout,
                                 const PolicyConfig& config)
 {
-    static const std::string TMP = "/tmp/healthec_compare_policies";
+    const std::string TMP = runtime_tmp_dir("healthec_compare_policies", runtime.seed);
     DiskSimulator sim(TMP, NUM_DISKS, PROFILE_BASELINE, runtime.seed);
     configure_slow_disks(sim);
     auto workload = make_workload(runtime.num_stripes, runtime.zipf_s, runtime.seed);
@@ -804,7 +840,8 @@ static LatentWorld build_dynamic_world(const RuntimeConfig& runtime,
     world.schedule = dynamic_schedule();
     world.requests.reserve(runtime.num_reads);
 
-    static const std::string TMP = "/tmp/healthec_compare_policies_dynamic_trace";
+    const std::string TMP =
+        runtime_tmp_dir("healthec_compare_policies_dynamic_trace", runtime.seed);
     std::filesystem::remove_all(TMP);
     DiskSimulator sim(TMP, NUM_DISKS, PROFILE_BASELINE, runtime.seed);
     auto workload = make_workload(runtime.num_stripes, runtime.zipf_s, runtime.seed);
@@ -1528,7 +1565,7 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    const ScoreParams health_params = locked_health_ec_params();
+    const ScoreParams health_params = runtime.health_ec_params;
     const auto policies = selected_policies(runtime);
 
     if (is_dynamic_scenario(runtime) && runtime.format == OutputFormat::EventTrace) {
@@ -1536,7 +1573,7 @@ int main(int argc, char** argv) {
         return 0;
     }
 
-    static const std::string TMP = "/tmp/healthec_compare_policies";
+    const std::string TMP = runtime_tmp_dir("healthec_compare_policies", runtime.seed);
     std::filesystem::remove_all(TMP);
     std::filesystem::create_directories(TMP);
 

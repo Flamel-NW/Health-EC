@@ -1,0 +1,49 @@
+T2.4.6.1 corrected calibration preflight
+
+$ git status --short --branch
+returncode=0
+--- stdout ---
+## dev...origin/dev
+ M experiments/tools/compare_policies.cpp
+?? experiments/results/t2_4_6_1_corrected_calibration/
+
+$ git status --short --branch
+returncode=0
+--- stdout ---
+## master...origin/master
+ M current_state.md
+ M evaluation/dynamic-degradation-scenario-contract.md
+ M evaluation/evaluation.md
+ M task_tree.md
+?? scripts/__pycache__/
+?? scripts/t2_4_6_1_corrected_calibration.py
+
+$ cat /proc/loadavg
+returncode=0
+--- stdout ---
+0.12 0.10 0.10 1/491 20
+
+$ free -h
+returncode=0
+--- stdout ---
+               total        used        free      shared  buff/cache   available
+Mem:            31Gi       2.3Gi        27Gi       1.1Mi       1.8Gi        29Gi
+Swap:             0B          0B          0B
+
+$ df -h /
+returncode=0
+--- stdout ---
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/root        48G   34G   14G  72% /
+
+$ vmstat 1 5
+returncode=0
+--- stdout ---
+procs -----------memory---------- ---swap-- -----io---- -system-- -------cpu-------
+ r  b   swpd   free   buff  cache   si   so    bi    bo   in   cs us sy id wa st gu
+ 0  0      0 29021360  89196 1786788    0    0   265  2494 1338    2  1  0 98  0  0  0
+ 0  0      0 29020624  89196 1786996    0    0     0     0  736  715  0  0 100  0  0  0
+ 0  0      0 29028688  89196 1786996    0    0     0   120  290  369  0  0 100  0  0  0
+ 0  0      0 29028688  89196 1786996    0    0     0     0  223  309  0  0 100  0  0  0
+ 0  0      0 29036752  89196 1786996    0    0     0     0  257  370  0  0 100  0  0  0
+
