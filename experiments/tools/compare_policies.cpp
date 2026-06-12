@@ -671,6 +671,7 @@ struct EventShardStats {
     int read_count = 0;
     bool migrated = false;
     bool trigger_recorded = false;
+    int trigger_window = -1;
 };
 
 static bool is_migration_positive(DiskState state) {
@@ -906,6 +907,28 @@ static std::vector<std::pair<ShardId, double>> latent_data_latencies(
     return out;
 }
 
+static const LatentShard& select_parity_for_dynamic_read(
+    const LatentRequest& req,
+    const std::unordered_map<ShardId, DiskId>& logical_disk,
+    const std::array<double, NUM_DISKS>& disk_health,
+    bool health_aware)
+{
+    const LatentShard* best = &req.parity.front();
+    if (!health_aware)
+        return *best;
+
+    double best_health = disk_health[logical_disk_for(logical_disk, *best)];
+    for (std::size_t i = 1; i < req.parity.size(); ++i) {
+        const LatentShard& candidate = req.parity[i];
+        double health = disk_health[logical_disk_for(logical_disk, candidate)];
+        if (health > best_health) {
+            best = &candidate;
+            best_health = health;
+        }
+    }
+    return *best;
+}
+
 static const LatentShard* find_data_shard(const LatentRequest& req, ShardId shard) {
     for (const auto& sh : req.data)
         if (sh.shard == shard) return &sh;
@@ -1046,8 +1069,7 @@ static void record_migration_trigger(
     if (!stats.trigger_recorded) {
         stats.trigger_recorded = true;
         if (is_migration_positive(state)) {
-            result.migration_true_positives++;
-            result.windows.at(req.window_id).migration_true_positives++;
+            stats.trigger_window = req.window_id;
         } else {
             result.aggregate.migration_false_positives++;
             result.windows.at(req.window_id).migration_false_positives++;
@@ -1075,19 +1097,29 @@ static void record_positive_event_reads(
     }
 }
 
-static long compute_migration_false_negatives(
+static void finalize_migration_truth(
+    DynamicRunResult& result,
     const std::unordered_map<int, std::unordered_map<ShardId, EventShardStats>>& event_stats)
 {
-    long fn = 0;
+    result.migration_true_positives = 0;
+    result.migration_false_negatives = 0;
+
     for (const auto& [event_id, shards] : event_stats) {
         (void)event_id;
         for (const auto& [shard, stats] : shards) {
             (void)shard;
-            if (stats.read_count >= 5 && !stats.migrated)
-                fn++;
+            if (stats.read_count < 5)
+                continue;
+
+            if (stats.migrated) {
+                result.migration_true_positives++;
+                if (stats.trigger_window >= 0)
+                    result.windows.at(stats.trigger_window).migration_true_positives++;
+            } else {
+                result.migration_false_negatives++;
+            }
         }
     }
-    return fn;
 }
 
 static void finalize_dynamic_result(DynamicRunResult& result,
@@ -1134,8 +1166,11 @@ static DynamicRunResult run_dynamic_policy(const LatentWorld& world,
     DynamicRunResult result;
     result.windows = make_dynamic_windows(world);
     result.aggregate_latencies.reserve(world.requests.size());
-    if (config.kind != PolicyKind::HealthEC)
+    if (config.kind != PolicyKind::HealthEC) {
+        result.migration_true_positives = NOT_APPLICABLE;
+        result.aggregate.migration_false_positives = NOT_APPLICABLE;
         result.migration_false_negatives = NOT_APPLICABLE;
+    }
 
     const int first_onset_read = FIRST_DYNAMIC_ONSET_WINDOW * world.window_size;
 
@@ -1145,9 +1180,11 @@ static DynamicRunResult run_dynamic_policy(const LatentWorld& world,
             record_positive_event_reads(world, req, logical_disk, event_stats);
 
         auto data_lat = latent_data_latencies(req, logical_disk);
-        ShardId parity_shard = req.parity.front().shard;
-        DiskId parity_disk = logical_disk_for(logical_disk, req.parity.front());
-        double parity_lat = latency_on_disk(req.parity.front(), parity_disk);
+        const LatentShard& parity = select_parity_for_dynamic_read(
+            req, logical_disk, disk_health, config.kind == PolicyKind::HealthEC);
+        ShardId parity_shard = parity.shard;
+        DiskId parity_disk = logical_disk_for(logical_disk, parity);
+        double parity_lat = latency_on_disk(parity, parity_disk);
 
         if (config.kind == PolicyKind::HealthEC) {
             for (const auto& sh : req.data) {
@@ -1325,8 +1362,7 @@ static DynamicRunResult run_dynamic_policy(const LatentWorld& world,
     }
 
     if (config.kind == PolicyKind::HealthEC)
-        result.migration_false_negatives =
-            compute_migration_false_negatives(event_stats);
+        finalize_migration_truth(result, event_stats);
 
     finalize_dynamic_result(result, world);
     return result;

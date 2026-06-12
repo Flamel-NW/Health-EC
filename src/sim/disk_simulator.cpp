@@ -51,12 +51,19 @@ DiskSimulator::DiskSimulator(std::string base_dir, int num_disks,
 
 // ── Path helpers ──────────────────────────────────────────────────────────────
 
+void DiskSimulator::validate_disk_id(core::DiskId disk) const {
+    if (disk < 0 || disk >= num_disks_)
+        throw std::out_of_range("DiskSimulator: DiskId out of range");
+}
+
 fs::path DiskSimulator::shard_path(core::DiskId disk, core::ShardId shard) const {
+    validate_disk_id(disk);
     return fs::path(base_dir_) / ("disk" + std::to_string(disk))
                                / ("shard" + std::to_string(shard) + ".bin");
 }
 
 void DiskSimulator::ensure_disk_dir(core::DiskId disk) const {
+    validate_disk_id(disk);
     fs::create_directories(
         fs::path(base_dir_) / ("disk" + std::to_string(disk)));
 }
@@ -90,8 +97,7 @@ std::vector<uint8_t> DiskSimulator::read_data(core::DiskId disk,
 // ── sample_latency_ms ─────────────────────────────────────────────────────────
 
 double DiskSimulator::sample_latency_ms(core::DiskId disk) {
-    if (disk < 0 || disk >= num_disks_)
-        throw std::out_of_range("DiskSimulator: DiskId out of range");
+    validate_disk_id(disk);
     DiskProfile profile;
     {
         std::shared_lock lock(profiles_mu_);
@@ -173,23 +179,20 @@ core::ShardMover DiskSimulator::make_mover() {
 // ── Profile control ───────────────────────────────────────────────────────────
 
 void DiskSimulator::set_profile(core::DiskId disk, DiskProfile profile) {
-    if (disk < 0 || disk >= num_disks_)
-        throw std::out_of_range("DiskSimulator: DiskId out of range");
+    validate_disk_id(disk);
     validate_profile(profile);
     std::unique_lock lock(profiles_mu_);
     profiles_[disk] = profile;
 }
 
 DiskProfile DiskSimulator::get_profile(core::DiskId disk) const {
-    if (disk < 0 || disk >= num_disks_)
-        throw std::out_of_range("DiskSimulator: DiskId out of range");
+    validate_disk_id(disk);
     std::shared_lock lock(profiles_mu_);
     return profiles_[disk];
 }
 
 void DiskSimulator::set_slow(core::DiskId disk, bool slow) {
-    if (disk < 0 || disk >= num_disks_)
-        throw std::out_of_range("DiskSimulator: DiskId out of range");
+    validate_disk_id(disk);
     std::unique_lock lock(profiles_mu_);
     profiles_[disk].slow_mode = slow;
 }

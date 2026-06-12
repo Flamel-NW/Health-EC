@@ -4,6 +4,7 @@
 #include <chrono>
 #include <cstdio>
 #include <exception>
+#include <limits>
 
 namespace healthec::core {
 
@@ -55,9 +56,13 @@ std::vector<MigrationCandidate> MigrationScheduler::top_candidates(int n) {
 }
 
 void MigrationScheduler::tick_once() {
-    auto candidates = top_candidates(params_.budget_B);
+    auto candidates = top_candidates(std::numeric_limits<int>::max());
+    int migrated = 0;
 
     for (const auto& cand : candidates) {
+        if (migrated >= params_.budget_B)
+            break;
+
         // Find the healthiest disk with H_d strictly greater than current disk.
         auto sorted_disks = sm_.get_all_disks_sorted_by_health();
         double cur_health  = sm_.get_health(cand.current_disk);
@@ -80,16 +85,27 @@ void MigrationScheduler::tick_once() {
                          "MigrationScheduler: failed to migrate shard %d "
                          "from disk %d to disk %d: %s\n",
                          cand.shard_id, cand.current_disk, target, e.what());
+            sm_.reset(cand.shard_id);
+            {
+                std::lock_guard<std::mutex> lk(mu_);
+                queue_.erase(cand.shard_id);
+            }
             continue;
         } catch (...) {
             std::fprintf(stderr,
                          "MigrationScheduler: failed to migrate shard %d "
                          "from disk %d to disk %d: unknown exception\n",
                          cand.shard_id, cand.current_disk, target);
+            sm_.reset(cand.shard_id);
+            {
+                std::lock_guard<std::mutex> lk(mu_);
+                queue_.erase(cand.shard_id);
+            }
             continue;
         }
 
         sm_.reset(cand.shard_id);
+        migrated++;
 
         {
             std::lock_guard<std::mutex> lk(mu_);

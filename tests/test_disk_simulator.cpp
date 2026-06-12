@@ -9,6 +9,7 @@
 #include <filesystem>
 #include <limits>
 #include <numeric>
+#include <stdexcept>
 #include <string>
 
 namespace fs = std::filesystem;
@@ -254,6 +255,47 @@ static void test_zero_jitter_is_deterministic() {
     std::puts("PASS test_zero_jitter_is_deterministic");
 }
 
+// ── test 9: disk_id_range_checked_for_io ─────────────────────────────────────
+static void test_disk_id_range_checked_for_io() {
+    DiskSimulator ds(test_dir("disk_id_range"), 2);
+    ds.write_shard(0, 7, {0x07});
+
+    bool threw = false;
+    try {
+        ds.write_shard(-1, 1, {0x01});
+    } catch (const std::out_of_range&) {
+        threw = true;
+    }
+    CHECK(threw);
+
+    threw = false;
+    try {
+        (void)ds.read_data(2, 7);
+    } catch (const std::out_of_range&) {
+        threw = true;
+    }
+    CHECK(threw);
+
+    threw = false;
+    try {
+        (void)ds.read_shard(2, 7, false);
+    } catch (const std::out_of_range&) {
+        threw = true;
+    }
+    CHECK(threw);
+
+    threw = false;
+    try {
+        ds.migrate_shard(0, 7, 2);
+    } catch (const std::out_of_range&) {
+        threw = true;
+    }
+    CHECK(threw);
+    CHECK(fs::exists(test_dir("disk_id_range") + "/disk0/shard7.bin"));
+
+    std::puts("PASS test_disk_id_range_checked_for_io");
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 int main() {
     // Remove any leftover state from a previous run.
@@ -267,6 +309,7 @@ int main() {
     test_make_reader_integration();
     test_invalid_profile_rejected();
     test_zero_jitter_is_deterministic();
+    test_disk_id_range_checked_for_io();
 
     // Clean up temporary files.
     fs::remove_all(TMP_ROOT);

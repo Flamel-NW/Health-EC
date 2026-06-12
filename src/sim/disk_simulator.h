@@ -108,6 +108,9 @@ private:
     // Returns the filesystem path for a shard file.
     std::filesystem::path shard_path(core::DiskId disk, core::ShardId shard) const;
 
+    // Throws std::out_of_range unless disk is in [0, num_disks_).
+    void validate_disk_id(core::DiskId disk) const;
+
     // Creates <base_dir>/disk{d}/ if it does not exist.
     void ensure_disk_dir(core::DiskId disk) const;
 };
