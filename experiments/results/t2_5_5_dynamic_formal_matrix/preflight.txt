@@ -1,16 +1,16 @@
-T2.4.5.5 preflight
+T2.5.5 preflight
 
 $ git status --short --branch
 returncode=0
 --- stdout ---
 ## dev...origin/dev
-?? experiments/results/t2_4_5_5_dynamic_formal_matrix/
+?? experiments/results/t2_5_5_dynamic_formal_matrix/
 
 $ git status --short --branch
 returncode=0
 --- stdout ---
 ## master...origin/master
-?? scripts/t2_4_5_5_dynamic_formal_matrix.py
+?? scripts/t2_5_5_dynamic_formal_matrix.py
 
 $ cat /proc/loadavg
 returncode=0

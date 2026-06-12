@@ -1,17 +1,17 @@
-T2.4.5.3 preflight
+T2.5.3 preflight
 
 $ git status --short --branch
 returncode=0
 --- stdout ---
 ## dev...origin/dev
-?? experiments/results/t2_4_5_3_tdr_timeout_validation/
+?? experiments/results/t2_5_3_tdr_timeout_validation/
 
 $ git status --short --branch
 returncode=0
 --- stdout ---
 ## master...origin/master
 ?? scripts/__pycache__/
-?? scripts/t2_4_5_3_timeout_validation.py
+?? scripts/t2_5_3_timeout_validation.py
 
 $ cat /proc/loadavg
 returncode=0

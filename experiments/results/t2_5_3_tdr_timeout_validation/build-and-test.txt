@@ -1,4 +1,4 @@
-T2.4.5.3 build and CTest
+T2.5.3 build and CTest
 
 $ cmake --build build --target compare_policies
 returncode=0

@@ -1,4 +1,4 @@
-T2.4.5.4 dynamic smoke / regression PASS
+T2.5.4 dynamic smoke / regression PASS
 scenario=dynamic_degradation
 seed=42
 dynamic_num_reads=100000
