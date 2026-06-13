@@ -1,0 +1,33 @@
+T2.8.2.4 A-boundary / plateau audit
+
+STATUS=COMPLETED
+FORMAL_SEEDS_USED=0
+T2823_SUMMARY=/root/workspace/Health-EC-workspace/Health-EC/experiments/results/t2_8_2_3_revised_objective_calibration/summary_by_candidate.csv
+T2821_SUMMARY=/root/workspace/Health-EC-workspace/Health-EC/experiments/results/t2_8_2_aggressive_bypass_calibration/summary_by_candidate.csv
+
+Corrected Objective v2 recomputation:
+  feasible_count=109
+  corrected_plateau_count=42
+  best_post_warmup_gap_ms=-10.3
+  best_severe_gap_ms=-12.35
+  corrected_cost_winner=t2_8_2_3|A=25|B=15|S=0.03|D=12 post=-10.05 severe=-12.25 bw=0.4 coverage=90.75 migFPmax=0
+  t2823_reported_selected=t2_8_2_3|A=15|B=15|S=0.05|D=12 bw=0.415 coverage=95.5
+  top_bracketed_plateau=t2_8_2_3|A=20|B=20|S=0.03|D=12 post=-10.1 severe=-12.2 bw=0.419 coverage=94.35 migFPmax=0
+
+Findings:
+1. T2.8.2.3 lock status remains UNBRACKETED, but the selected artifact is stale: floating-point tolerance excluded candidates exactly at the 0.25ms plateau edge.
+2. Corrected cost-first Objective v2 winner is at A_abs=25, the upper A boundary, not at A_abs=15 lower boundary.
+3. Retrospective lower-A data from T2.8.2.1 contains no A_abs<15 candidate in the corrected Objective v2 plateau, so expanding A downward is not justified.
+4. A fully bracketed plateau candidate already exists: t2_8_2_3|A=20|B=20|S=0.03|D=12. It has the same rounded latency gaps as the reported T2.8.2.3 selected candidate and a modest BW/TDR cost delta relative to the corrected winner.
+5. Moving directly to T2.8.3 is still blocked: accepting a bracketed candidate would require an explicit Objective v2.1 policy change, while retaining pure cost-first requires auditing or expanding the A upper boundary.
+
+Lower-A retrospective:
+  lower_a_candidate_count=228
+  lower_a_objective_v2_feasible=1
+  lower_a_in_corrected_plateau=0
+
+Decision:
+  do_not_expand_A_downward=YES
+  do_not_treat_T2823_reported_selected_as_locked=YES
+  do_not_enter_T283=YES
+  next_action=T2.8.2.5 decide Objective v2.1: either prefer bracketed/coverage-safe plateau candidate from existing validation artifacts, or run a narrow upper-A expansion if pure cost-first remains mandatory.

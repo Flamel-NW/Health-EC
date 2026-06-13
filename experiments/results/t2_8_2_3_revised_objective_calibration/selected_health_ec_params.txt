@@ -1,0 +1,45 @@
+T2.8.2.3 Objective v2 aggressive-bypass calibration selection
+
+LOCKED=UNBRACKETED
+mode=full
+grids_run=t2_8_2_3_objective_v2
+objective=objective_v2_latency_plateau_cost_first
+post_warmup_windows=3..19
+read_bypass_eligible=selected_parity_enters_first_k_and_bypasses_positive_data
+hard_constraints=theta_S>=0.03,theta_D>=12,post_warmup_gap<=0,severe_gap<=0,bw_ratio_median<=0.60,bw_ratio_max<=1.00,coverage_median>=90,mig_fp_seed_max==0
+latency_plateau_tolerance_ms=0.25
+plateau_tiebreakers=lower_bw_ratio_median,lower_migration_triggers,lower_pre_slowdown_parity_reads,lower_recovery_parity_reads,higher_theta_S
+explicit_floors=theta_S=0.03,theta_D=12; non_floor_boundaries=A_abs,B_abs,theta_S_max,theta_D_max
+
+selected_candidate_id=t2_8_2_3|A=15|B=15|S=0.05|D=12
+selected_loser_sig_abs_ms=15
+selected_parity_win_abs_ms=15
+selected_theta_S=0.05
+selected_theta_D=12
+best_post_warmup_gap_ms=-10.3
+best_severe_gap_ms=-12.35
+plateau_candidate_count=39
+
+winner_metrics:
+  post_warmup_p99_gap_to_tdr_ms_median=-10.1
+  severe_window_p99_gap_to_tdr_ms_median=-12.2
+  bandwidth_vs_tdr_ratio_median=0.415
+  bandwidth_vs_tdr_ratio_max=0.434
+  read_bypass_coverage_pct_median=95.5
+  migration_triggers_median=6
+  migration_false_positives_max=0
+  pre_slowdown_parity_reads_median=22
+  recovery_parity_reads_median=5072
+
+ranking_top10_plateau:
+rank,candidate_id,post_warmup_gap,severe_gap,bw_ratio,coverage,mig_fp_max
+1,t2_8_2_3|A=15|B=15|S=0.05|D=12,-10.1,-12.2,0.415,95.5,0
+2,t2_8_2_3|A=20|B=20|S=0.03|D=12,-10.1,-12.2,0.419,94.35,0
+3,t2_8_2_3|A=25|B=15|S=0.03|D=16,-10.1,-12.3,0.419,91.15,0
+4,t2_8_2_3|A=20|B=15|S=0.03|D=12,-10.1,-12.3,0.419,94.8,0
+5,t2_8_2_3|A=25|B=10|S=0.03|D=12,-10.15,-12.3,0.422,90.75,0
+6,t2_8_2_3|A=15|B=15|S=0.03|D=12,-10.2,-12.25,0.429,96.8,0
+7,t2_8_2_3|A=20|B=20|S=0.03|D=16,-10.2,-12.3,0.431,94.65,0
+8,t2_8_2_3|A=20|B=15|S=0.03|D=16,-10.2,-12.3,0.434,95,0
+9,t2_8_2_3|A=15|B=20|S=0.03|D=12,-10.15,-12.3,0.434,96.45,0
+10,t2_8_2_3|A=20|B=10|S=0.03|D=12,-10.2,-12.3,0.438,94.9,0
