@@ -1,0 +1,18 @@
+T2.8.5 aggressive bypass aggregation provenance
+STATUS=PASS
+input_policy=only T2.8.4 white-listed formal raw artifacts
+excluded_inputs=T2.8.3 smoke,T2.8.2 validation,T2.6/T2.7 artifacts
+scenario=dynamic_degradation
+formal_seeds=42..71
+dynamic_timeout_default=15
+health_ec_defaults=theta_S=0.03,theta_D=12,A_abs=25,B_abs=15
+
+dynamic_matrix_raw,path=/root/workspace/Health-EC-workspace/Health-EC/experiments/results/t2_8_4_aggressive_bypass_formal_matrix/dynamic_matrix_raw.csv,sha256=da49b8c442d1ff3c06763cac5f138441a5330556854d8f0479cab1754e4800ae,size=21739,mtime_ns=1781380477789074749
+dynamic_windowed_raw,path=/root/workspace/Health-EC-workspace/Health-EC/experiments/results/t2_8_4_aggressive_bypass_formal_matrix/dynamic_windowed_raw.csv,sha256=76a49fca71847058d27d4658fc7675bff7b49b9a5a73c6ecf4161f0a6a2e7b25,size=325688,mtime_ns=1781380477824028026
+event_trace_seed42,path=/root/workspace/Health-EC-workspace/Health-EC/experiments/results/t2_8_4_aggressive_bypass_formal_matrix/event_trace_seed42.csv,sha256=75ebaa6cd2efb685763f7c118abec8f9a793944f1267147300a71286e5a12822,size=1110,mtime_ns=1781380477686962776
+static_canonical_seed42,path=/root/workspace/Health-EC-workspace/Health-EC/experiments/results/t2_8_4_aggressive_bypass_formal_matrix/static_canonical_seed42.csv,sha256=91d3979b7aad621ef4cb1e7d0a2cec64b02b7993411b243579351f34b7ffb6aa,size=660,mtime_ns=1781380477779809830
+t2_8_4_validation,path=/root/workspace/Health-EC-workspace/Health-EC/experiments/results/t2_8_4_aggressive_bypass_formal_matrix/validation.txt,sha256=677fd411f804b092a83d3e4a34e77229f1731be023d6402370fd01e320e31762,size=3032,mtime_ns=1781380477828028097
+t2_8_4_artifact_provenance,path=/root/workspace/Health-EC-workspace/Health-EC/experiments/results/t2_8_4_aggressive_bypass_formal_matrix/artifact_provenance.txt,sha256=2877d9fe30ee76754e3b2033d0c1db5ab0d36372f604ac4df9018e944303a70c,size=3256,mtime_ns=1781380477826028062
+t2_8_2_5_selected,path=/root/workspace/Health-EC-workspace/Health-EC/experiments/results/t2_8_2_5_upper_a_expansion/selected_health_ec_params.txt,sha256=8e8d5ee91a8be5d2c197c0d402e77c0b5e463fdd95b4949b18a2b29026a811d7,size=2302,mtime_ns=1781375209328316621
+t2_8_2_5_validation,path=/root/workspace/Health-EC-workspace/Health-EC/experiments/results/t2_8_2_5_upper_a_expansion/validation.txt,sha256=6b93a7e1b7b3c542936aa6b56f1f3e93961b94beb96618e69831826518994c53,size=462,mtime_ns=1781375073823949225
+t2_8_3_validation_gate,path=/root/workspace/Health-EC-workspace/Health-EC/experiments/results/t2_8_3_aggressive_bypass_smoke/validation.txt,sha256=56a76a43e5e9e4e086d2ecb8c777ba88f8145d460623e35334b78f1a425b4d67,size=1485,mtime_ns=1781379011872716176
