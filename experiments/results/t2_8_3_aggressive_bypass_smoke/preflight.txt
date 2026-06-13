@@ -1,0 +1,43 @@
+T2.8.3 aggressive bypass smoke preflight
+
+$ git status --short --branch
+returncode=0
+--- stdout ---
+## dev...origin/dev
+?? experiments/results/t2_8_3_aggressive_bypass_smoke/
+
+$ git status --short --branch
+returncode=0
+--- stdout ---
+## master...origin/master
+?? scripts/t2_8_3_aggressive_bypass_smoke.py
+
+$ cat /proc/loadavg
+returncode=0
+--- stdout ---
+0.22 0.14 0.15 1/424 23
+
+$ free -h
+returncode=0
+--- stdout ---
+               total        used        free      shared  buff/cache   available
+Mem:            31Gi       2.0Gi        27Gi       1.1Mi       2.5Gi        29Gi
+Swap:             0B          0B          0B
+
+$ df -h /
+returncode=0
+--- stdout ---
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/root        48G   34G   14G  72% /
+
+$ vmstat 1 5
+returncode=0
+--- stdout ---
+procs -----------memory---------- ---swap-- -----io---- -system-- -------cpu-------
+ r  b   swpd   free   buff  cache   si   so    bi    bo   in   cs us sy id wa st gu
+ 0  0      0 28561844 298948 2372764    0    0    57   890 1717    1  6  1 93  0  0  0
+ 0  0      0 28561600 298948 2372984    0    0     0     0 1002 1053  0  0 100  0  0  0
+ 0  0      0 28561600 298948 2372984    0    0     0     0  822  924  0  0 100  0  0  0
+ 0  0      0 28561600 298948 2372984    0    0     0     0  764  838  0  0 100  0  0  0
+ 0  0      0 28561600 298948 2372984    0    0     0  1036  850  956  0  0 100  0  0  0
+
