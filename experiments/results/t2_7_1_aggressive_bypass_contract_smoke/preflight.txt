@@ -1,0 +1,40 @@
+T2.7.1 aggressive bypass smoke preflight
+
+$ git status --short --branch
+returncode=0
+--- stdout ---
+## dev...origin/dev
+ M experiments/tools/compare_policies.cpp
+ M experiments/tools/validate_compare_policies_contract.py
+?? experiments/results/t2_7_1_aggressive_bypass_contract_smoke/
+
+$ git status --short --branch
+returncode=0
+--- stdout ---
+## master...origin/master
+ M AGENT_INSTRUCTIONS.md
+ M current_state.md
+ M evaluation/experiment-log.md
+ M project_overview.md
+ M task_tree.md
+?? scripts/__pycache__/
+?? scripts/t2_7_1_aggressive_bypass_calibration.py
+
+$ cat /proc/loadavg
+returncode=0
+--- stdout ---
+0.88 0.38 0.20 2/376 17
+
+$ free -h
+returncode=0
+--- stdout ---
+               total        used        free      shared  buff/cache   available
+Mem:            31Gi       1.5Gi        28Gi       1.1Mi       1.4Gi        29Gi
+Swap:             0B          0B          0B
+
+$ df -h /
+returncode=0
+--- stdout ---
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/root        48G   34G   14G  72% /
+

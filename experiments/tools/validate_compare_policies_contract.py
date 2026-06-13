@@ -45,6 +45,14 @@ DYNAMIC_HEADER = [
     "recovery_regret_reads",
 ]
 
+EXTENDED_DYNAMIC_HEADER = DYNAMIC_HEADER + [
+    "post_warmup_windowed_p99_ms",
+    "severe_window_p99_ms",
+    "read_bypass_eligible_events",
+    "read_bypass_triggered_events",
+    "read_bypass_coverage_pct",
+]
+
 WINDOWED_HEADER = [
     "scenario",
     "seed",
@@ -145,6 +153,49 @@ def check_aggregate(runner):
         fail(f"unexpected aggregate policy order: {order}")
 
 
+def check_extended_aggregate(runner):
+    result = run([
+        runner,
+        "--scenario",
+        "dynamic_degradation",
+        "--num-reads",
+        "20000",
+        "--policy",
+        "all",
+        "--format",
+        "csv",
+        "--extended-metrics",
+    ])
+    rows = csv_rows(result.stdout, EXTENDED_DYNAMIC_HEADER)
+    if len(rows) != len(POLICIES):
+        fail(f"expected 4 extended aggregate rows, got {len(rows)}")
+    by_policy = {row["policy"]: row for row in rows}
+    for policy in POLICIES:
+        row = by_policy[policy]
+        if float(row["post_warmup_windowed_p99_ms"]) < 0.0:
+            fail(f"invalid post-warmup p99 for {policy}: {row}")
+        if float(row["severe_window_p99_ms"]) < 0.0:
+            fail(f"invalid severe-window p99 for {policy}: {row}")
+        if policy == "health_ec":
+            eligible = int(row["read_bypass_eligible_events"])
+            triggered = int(row["read_bypass_triggered_events"])
+            if eligible < 0 or triggered < 0 or triggered > eligible:
+                fail(f"invalid Health-EC read bypass counts: {row}")
+            coverage = float(row["read_bypass_coverage_pct"])
+            if eligible == 0 and coverage != -1.0:
+                fail(f"expected -1 coverage for zero eligibility: {row}")
+            if eligible > 0 and not (0.0 <= coverage <= 100.0):
+                fail(f"invalid Health-EC read bypass coverage: {row}")
+        else:
+            for field in [
+                "read_bypass_eligible_events",
+                "read_bypass_triggered_events",
+                "read_bypass_coverage_pct",
+            ]:
+                if row[field] != "-1.0" and row[field] != "-1":
+                    fail(f"expected N/A read-bypass field for {policy}: {row}")
+
+
 def check_windowed(runner):
     result = run([
         runner,
@@ -231,6 +282,32 @@ def check_negative_commands(runner):
         expect_success=False,
         expected_stderr="must be non-negative",
     )
+    run(
+        [
+            runner,
+            "--scenario",
+            "canonical_stress20",
+            "--format",
+            "csv",
+            "--extended-metrics",
+        ],
+        expect_success=False,
+        expected_stderr="extended metrics require",
+    )
+    run(
+        [
+            runner,
+            "--scenario",
+            "dynamic_degradation",
+            "--num-reads",
+            "20000",
+            "--format",
+            "windowed_csv",
+            "--extended-metrics",
+        ],
+        expect_success=False,
+        expected_stderr="extended metrics require",
+    )
 
 
 def main():
@@ -238,6 +315,7 @@ def main():
         fail("usage: validate_compare_policies_contract.py <compare_policies>")
     runner = sys.argv[1]
     check_aggregate(runner)
+    check_extended_aggregate(runner)
     check_windowed(runner)
     check_event_trace(runner)
     check_negative_commands(runner)

@@ -1,0 +1,5 @@
+policy_or_candidate,seed,returncode,stderr_empty,stdout_lines
+timeout_degraded_read,1001,0,1,2
+health_ec,1001,0,1,2
+health_ec,1001,0,1,2
+health_ec,1001,0,1,2

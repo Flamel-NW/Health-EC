@@ -1,0 +1,14 @@
+T2.7.1 aggressive read-bypass calibration validation
+LOCKED=NOT_RUN_T271_SMOKE
+mode=smoke
+raw_rows=4
+summary_rows=3
+feasible_count=0
+grids_run=smoke
+validation_seeds=1001
+formal_test_seeds_used=0
+extended_metrics_schema=PASS
+tdr_baseline=PASS
+t2_6_locked_baseline=PASS
+objective_columns=PASS
+parameter_lock=NOT_RUN
