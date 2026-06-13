@@ -87,10 +87,10 @@ static ShardId make_shard(int stripe, int idx) { return stripe * (K + M) + idx; 
 
 static ScoreParams locked_health_ec_params() {
     ScoreParams p;
-    p.theta_S = 1.7;
-    p.theta_D = 1.7;
+    p.theta_S = 0.03;
+    p.theta_D = 12.0;
     p.loser_sig_ratio = 0.0;
-    p.loser_sig_abs_ms = 15.0;
+    p.loser_sig_abs_ms = 25.0;
     p.parity_win_abs_ms = 15.0;
     return p;
 }

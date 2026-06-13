@@ -1,0 +1,30 @@
+T2.8.2.5 pure cost-first upper-A expansion audit
+
+STATUS=COMPLETED
+FORMAL_SEEDS_USED=0
+LOCKED=PASS
+RESULT_DIR=/root/workspace/Health-EC-workspace/Health-EC/experiments/results/t2_8_2_5_upper_a_expansion
+GRID_RUN=t2_8_2_5_upper_a_expansion
+GRID_A=15,20,25,30,35,40,45,50,60,80
+GRID_B=10,15,20,25,30
+GRID_THETA_S=0.03,0.04,0.05,0.07,0.1
+GRID_THETA_D=12,16,24,32
+
+Objective v2.1 policy:
+  policy=pure_cost_first_upper_A_expansion
+  theta_S_floor=0.03
+  theta_D_floor=12
+  A_lower_anchor=15; lower-A expansion rejected by T2.8.2.4
+  bracket_required_for=A_upper,B_lower,B_upper,theta_S_upper,theta_D_upper
+
+Results:
+  feasible_count=166
+  plateau_candidate_count=54
+  best_post_warmup_gap_ms=-10.3
+  best_severe_gap_ms=-12.35
+  selected_or_best=t2_8_2_5|A=25|B=15|S=0.03|D=12 post=-10.05 severe=-12.25 bw=0.4 coverage=90.75 migFPmax=0 boundary=0
+  top_bracketed_plateau=t2_8_2_5|A=25|B=15|S=0.03|D=12 post=-10.05 severe=-12.25 bw=0.4 coverage=90.75 migFPmax=0
+
+Decision:
+  bracketed_LOCKED_PASS=YES
+  next_action=T2.8.3 aggressive bypass smoke/regression may proceed.

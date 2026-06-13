@@ -1,0 +1,11 @@
+a_abs,candidate_count,feasible_count,plateau_count,min_plateau_bw_ratio_median,min_plateau_bw_candidate,min_plateau_coverage_pct,max_plateau_coverage_pct,min_plateau_post_warmup_gap_ms,min_plateau_severe_gap_ms
+15,100,77,30,0.415,t2_8_2_5|A=15|B=15|S=0.05|D=12,95.5,97.45,-10.3,-12.35
+20,100,60,14,0.419,t2_8_2_5|A=20|B=20|S=0.03|D=12,94.2,95.8,-10.2,-12.3
+25,100,29,10,0.4,t2_8_2_5|A=25|B=15|S=0.03|D=12,90.75,92.55,-10.15,-12.3
+30,100,0,0,,,,,,
+35,100,0,0,,,,,,
+40,100,0,0,,,,,,
+45,100,0,0,,,,,,
+50,100,0,0,,,,,,
+60,100,0,0,,,,,,
+80,100,0,0,,,,,,

@@ -1,0 +1,33 @@
+T2.8.2.5 aggressive bypass full preflight
+
+$ git status --short --branch
+returncode=0
+--- stdout ---
+## dev...origin/dev
+?? experiments/results/t2_8_2_5_upper_a_expansion/
+
+$ git status --short --branch
+returncode=0
+--- stdout ---
+## master...origin/master
+?? scripts/__pycache__/
+?? scripts/t2_8_2_5_upper_a_expansion.py
+
+$ cat /proc/loadavg
+returncode=0
+--- stdout ---
+0.19 0.15 0.25 1/424 23
+
+$ free -h
+returncode=0
+--- stdout ---
+               total        used        free      shared  buff/cache   available
+Mem:            31Gi       2.0Gi        27Gi       1.1Mi       2.5Gi        29Gi
+Swap:             0B          0B          0B
+
+$ df -h /
+returncode=0
+--- stdout ---
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/root        48G   34G   14G  72% /
+
