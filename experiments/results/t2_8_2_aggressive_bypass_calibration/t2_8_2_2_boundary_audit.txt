@@ -1,0 +1,45 @@
+T2.8.2.2 boundary-result audit
+
+inputs:
+  summary_csv=/root/workspace/Health-EC-workspace/Health-EC/experiments/results/t2_8_2_aggressive_bypass_calibration/summary_by_candidate.csv
+  raw_csv=/root/workspace/Health-EC-workspace/Health-EC/experiments/results/t2_8_2_aggressive_bypass_calibration/dynamic_validation_raw.csv
+  validation_seeds=1001;1002;1003;1004;1005;1006;1007;1008;1009;1010
+  formal_seed_hits=0
+
+current_objective_result:
+  selected=expanded|A=15|B=10|S=0.01|D=12
+  post_warmup_gap_ms=-10.35
+  severe_gap_ms=-12.35
+  bw_ratio_median=0.49
+  coverage_pct=97.1
+  theta_s_boundary=lower
+
+audit_findings:
+  1. Current ranking is latency-first after hard filters; bandwidth and pre/recovery parity reads only break ties.
+  2. The selected theta_S=0.01 improves median post-warmup gap by only 0.05 ms over theta_S=0.03 with A=15,B=10,D=12.
+     theta_S=0.03 candidate gap=-10.3 ms, bw_ratio=0.457, coverage=97%.
+  3. The behavior is near-all eligible bypass, not all-read bypass: selected coverage is high over eligible events, while median bandwidth remains below half of TDR.
+     selected parity_reads_median=20614; TDR parity_reads_median=42132.
+  4. Lower-theta_S expansion is not justified by the observed plateau; the next calibration should stop searching below an explicit theta_S floor.
+  5. Boundary checking must use the union of searched values and explicit floor/ceiling policy; checking only the expanded grid can miss primary-grid boundary winners.
+
+revised_objective_v2:
+  theta_S_floor=0.03
+  theta_D_floor=12
+  latency_tolerance_ms=0.25
+  hard_constraints=validation_seeds_only,formal_seed_hits=0,post_warmup_gap<=0,severe_gap<=0,bw_ratio_median<=0.60,bw_ratio_max<=1.00,coverage>=90,migration_fp_max=0
+  selection=choose candidates within latency_tolerance of the best feasible post-warmup and severe-window gaps; then minimize bw_ratio_median, migration_triggers, pre_slowdown_parity_reads, recovery_parity_reads, and prefer higher theta_S.
+
+revised_objective_applied_to_existing_data:
+  plateau_size=42
+  recommended_existing_candidate=primary|A=15|B=15|S=0.05|D=12
+  post_warmup_gap_ms=-10.1
+  severe_gap_ms=-12.2
+  bw_ratio_median=0.415
+  coverage_pct=95.5
+  migration_fp_max=0
+
+decision:
+  Do not accept theta_S=0.01 as locked parameters.
+  Do not expand theta_S below 0.01.
+  Run the next validation calibration with objective_v2, theta_S>=0.03, theta_D>=12, and a grid that brackets A/B above current high-gate candidates.

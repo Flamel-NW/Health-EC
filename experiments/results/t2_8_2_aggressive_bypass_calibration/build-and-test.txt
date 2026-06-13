@@ -1,4 +1,4 @@
-T2.8.2 build and CTest
+T2.8.2.1 build and CTest
 
 $ cmake --build build --target compare_policies
 returncode=0
@@ -39,4 +39,3 @@ Test project /root/workspace/Health-EC-workspace/Health-EC/build
 100% tests passed, 0 tests failed out of 12
 
 Total Test time (real) =   1.57 sec
-
