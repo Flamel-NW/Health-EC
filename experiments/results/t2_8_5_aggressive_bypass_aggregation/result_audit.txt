@@ -1,0 +1,24 @@
+T2.8.5 aggressive bypass result audit
+STATUS=PASS
+input_policy=only T2.8.4 white-listed formal raw artifacts
+
+policy_medians:
+vanilla_ec: p99_ms=91.25, post_warmup_p99_ms=43.9, severe_p99_ms=548.1, bw_pct=0, coverage_pct=-1, mig_tp_fp_fn=-1/-1/-1, mig_precision_pct=-1, mig_recall_pct=-1
+late_binding: p99_ms=19.2, post_warmup_p99_ms=18.1, severe_p99_ms=18.2, bw_pct=25, coverage_pct=-1, mig_tp_fp_fn=-1/-1/-1, mig_precision_pct=-1, mig_recall_pct=-1
+timeout_degraded_read: p99_ms=29.6, post_warmup_p99_ms=29.2, severe_p99_ms=31.1, bw_pct=10.5, coverage_pct=-1, mig_tp_fp_fn=-1/-1/-1, mig_precision_pct=-1, mig_recall_pct=-1
+health_ec: p99_ms=22.8, post_warmup_p99_ms=19.15, severe_p99_ms=18.9, bw_pct=4.3, coverage_pct=90.95, mig_tp_fp_fn=181/0/21018, mig_precision_pct=100, mig_recall_pct=0.854
+
+comparative_audit:
+health_vs_tdr_post_warmup_p99_gap_ms=-10.05
+health_vs_tdr_severe_p99_gap_ms=-12.2
+health_vs_late_binding_post_warmup_p99_gap_ms=1.05
+health_vs_late_binding_severe_p99_gap_ms=0.7
+health_bw_vs_tdr_ratio=0.41
+health_bw_vs_late_binding_ratio=0.172
+strong_result_candidate=YES
+
+interpretation:
+Health-EC should be interpreted with separate read-bypass and migration metrics. Read-bypass coverage is not migration recall.
+Observed migration false positives are zero in this formal matrix; do not generalize this as a universal zero-FP guarantee.
+Current evidence is a strong-result candidate: Health-EC beats TDR on post-warmup/severe P99 while using substantially less bandwidth, with high read-bypass coverage and zero observed FP.
+Remaining evidence gap: quantify migration I/O cost and add realistic/sensitivity workloads before final paper claims.
