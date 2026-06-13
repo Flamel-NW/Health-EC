@@ -1,0 +1,4 @@
+label,candidate_id,a_abs,b_abs,theta_s,theta_d,non_floor_boundary,post_warmup_gap_ms,severe_gap_ms,bw_ratio_median,bw_ratio_delta_vs_selected,coverage_pct,coverage_delta_vs_selected,pre_slowdown_parity_reads,recovery_parity_reads,migration_fp_max
+t2824_corrected_cost_winner_rerun,t2_8_2_5|A=25|B=15|S=0.03|D=12,25,15,0.03,12,0,-10.05,-12.25,0.4,0,90.75,0,0,5154.5,0
+t2825_selected_or_best,t2_8_2_5|A=25|B=15|S=0.03|D=12,25,15,0.03,12,0,-10.05,-12.25,0.4,0,90.75,0,0,5154.5,0
+t2825_top_bracketed_plateau,t2_8_2_5|A=25|B=15|S=0.03|D=12,25,15,0.03,12,0,-10.05,-12.25,0.4,0,90.75,0,0,5154.5,0
