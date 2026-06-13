@@ -1,0 +1,42 @@
+T2.8.2.3 build and CTest
+
+$ cmake --build build --target compare_policies
+returncode=0
+--- stdout ---
+[ 50%] Built target healthec_core
+[ 80%] Built target healthec_sim
+[100%] Built target compare_policies
+
+$ ctest --test-dir build --output-on-failure
+returncode=0
+--- stdout ---
+Test project /root/workspace/Health-EC-workspace/Health-EC/build
+      Start  1: jerasure_wrapper
+ 1/12 Test  #1: jerasure_wrapper .............................   Passed    0.00 sec
+      Start  2: score_manager
+ 2/12 Test  #2: score_manager ................................   Passed    0.00 sec
+      Start  3: read_scheduler
+ 3/12 Test  #3: read_scheduler ...............................   Passed    0.21 sec
+      Start  4: disk_simulator
+ 4/12 Test  #4: disk_simulator ...............................   Passed    0.22 sec
+      Start  5: migration_scheduler
+ 5/12 Test  #5: migration_scheduler ..........................   Passed    0.03 sec
+      Start  6: integration
+ 6/12 Test  #6: integration ..................................   Passed    0.14 sec
+      Start  7: loser_significance
+ 7/12 Test  #7: loser_significance ...........................   Passed    0.00 sec
+      Start  8: compare_policies_dynamic_csv
+ 8/12 Test  #8: compare_policies_dynamic_csv .................   Passed    0.18 sec
+      Start  9: compare_policies_dynamic_windowed_csv
+ 9/12 Test  #9: compare_policies_dynamic_windowed_csv ........   Passed    0.18 sec
+      Start 10: compare_policies_dynamic_event_trace
+10/12 Test #10: compare_policies_dynamic_event_trace .........   Passed    0.00 sec
+      Start 11: compare_policies_dynamic_invalid_num_reads
+11/12 Test #11: compare_policies_dynamic_invalid_num_reads ...   Passed    0.00 sec
+      Start 12: compare_policies_dynamic_contract
+12/12 Test #12: compare_policies_dynamic_contract ............   Passed    0.58 sec
+
+100% tests passed, 0 tests failed out of 12
+
+Total Test time (real) =   1.57 sec
+

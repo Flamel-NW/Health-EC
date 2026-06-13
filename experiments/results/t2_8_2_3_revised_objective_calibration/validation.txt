@@ -1,0 +1,17 @@
+T2.8.2.3 Objective v2 aggressive-bypass calibration validation
+LOCKED=UNBRACKETED
+mode=full
+raw_rows=1940
+summary_rows=193
+expected_raw_rows=1940
+expected_summary_rows=193
+feasible_count=109
+plateau_candidate_count=39
+grids_run=t2_8_2_3_objective_v2
+validation_seeds=1001;1002;1003;1004;1005;1006;1007;1008;1009;1010
+formal_test_seeds_used=0
+extended_metrics_schema=PASS
+tdr_baseline=PASS
+t2_6_locked_baseline=PASS
+objective_v2_columns=PASS
+result_dir_fail_closed=PASS
