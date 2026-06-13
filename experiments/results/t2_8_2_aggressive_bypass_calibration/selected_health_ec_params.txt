@@ -1,0 +1,29 @@
+T2.8.2 aggressive read-bypass calibration selection
+
+LOCKED=UNBRACKETED
+mode=full
+grids_run=primary;expanded
+objective=post_warmup_tdr_gap_with_bw_and_fp_constraints
+post_warmup_windows=3..19
+read_bypass_eligible=selected_parity_enters_first_k_and_bypasses_positive_data
+hard_constraints=bw_ratio_median<=0.60,bw_ratio_max<=1.00,coverage_median>=50,mig_fp_rate_max<=5,mig_fp_seed_max<=10,post_warmup_gap_reduction_vs_t26_median>=30
+
+selected_candidate_id=expanded|A=15|B=10|S=0.01|D=12
+selected_loser_sig_abs_ms=15
+selected_parity_win_abs_ms=10
+selected_theta_S=0.01
+selected_theta_D=12
+
+winner_metrics:
+  post_warmup_p99_gap_to_tdr_ms_median=-10.35
+  severe_window_p99_gap_to_tdr_ms_median=-12.35
+  bandwidth_vs_tdr_ratio_median=0.49
+  bandwidth_vs_tdr_ratio_max=0.505
+  read_bypass_coverage_pct_median=97.1
+  migration_fp_rate_pct_max=0
+  migration_false_positives_max=0
+  post_warmup_gap_reduction_vs_t26_pct_median=217.614
+
+ranking_top1:
+candidate_id,post_warmup_gap,severe_gap,bw_ratio,coverage,mig_fp_rate
+expanded|A=15|B=10|S=0.01|D=12,-10.35,-12.35,0.49,97.1,0
