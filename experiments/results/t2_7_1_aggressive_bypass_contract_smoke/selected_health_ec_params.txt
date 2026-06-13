@@ -1,0 +1,11 @@
+T2.7 aggressive read-bypass calibration selection
+
+LOCKED=NOT_RUN_T271_SMOKE
+mode=smoke
+grids_run=smoke
+objective=post_warmup_tdr_gap_with_bw_and_fp_constraints
+post_warmup_windows=3..19
+read_bypass_eligible=selected_parity_enters_first_k_and_bypasses_positive_data
+hard_constraints=bw_ratio_median<=0.60,bw_ratio_max<=1.00,coverage_median>=50,mig_fp_rate_max<=5,mig_fp_seed_max<=10,post_warmup_gap_reduction_vs_t26_median>=30
+
+reason=no feasible candidate selected

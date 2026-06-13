@@ -178,6 +178,7 @@ struct RuntimeConfig {
     bool timeout_ms_explicit = false;
     ScoreParams health_ec_params = locked_health_ec_params();
     OutputFormat format = OutputFormat::Table;
+    bool extended_metrics = false;
 };
 
 struct PolicyConfig {
@@ -323,6 +324,8 @@ static RuntimeConfig parse_args(int argc, char** argv) {
             } else {
                 throw std::invalid_argument("invalid --format: " + value);
             }
+        } else if (arg == "--extended-metrics") {
+            cfg.extended_metrics = true;
         } else {
             throw std::invalid_argument("unknown argument: " + arg);
         }
@@ -349,6 +352,11 @@ static void validate_runtime_config(const RuntimeConfig& cfg) {
     if (is_dynamic_scenario(cfg) && cfg.num_reads % DYNAMIC_NUM_WINDOWS != 0) {
         throw std::invalid_argument(
             "dynamic_degradation requires --num-reads divisible by 20");
+    }
+    if (cfg.extended_metrics &&
+        (!is_dynamic_scenario(cfg) || cfg.format != OutputFormat::Csv)) {
+        throw std::invalid_argument(
+            "extended metrics require --scenario dynamic_degradation --format csv");
     }
 }
 
@@ -658,6 +666,8 @@ struct DynamicRunResult {
     std::vector<DynamicWindowResult> windows;
     double post_onset_p95_auc_ms = 0.0;
     double post_onset_p99_auc_ms = 0.0;
+    double post_warmup_windowed_p99_ms = NOT_APPLICABLE;
+    double severe_window_p99_ms = NOT_APPLICABLE;
     long pre_slowdown_parity_reads = 0;
     long recovery_parity_reads = 0;
     long migration_true_positives = 0;
@@ -665,6 +675,8 @@ struct DynamicRunResult {
     long first_detection_latency_reads = NOT_APPLICABLE;
     long first_mitigation_latency_reads = NOT_APPLICABLE;
     long recovery_regret_reads = 0;
+    long read_bypass_eligible_events = NOT_APPLICABLE;
+    long read_bypass_triggered_events = NOT_APPLICABLE;
 };
 
 struct EventShardStats {
@@ -676,6 +688,10 @@ struct EventShardStats {
 
 static bool is_migration_positive(DiskState state) {
     return state == DiskState::MildSlow || state == DiskState::SevereSlow;
+}
+
+static bool is_severe_state(DiskState state) {
+    return state == DiskState::SevereSlow;
 }
 
 static const char* disk_state_name(DiskState state) {
@@ -960,6 +976,31 @@ static bool positive_data_bypassed_by_parity(
     return false;
 }
 
+static bool read_bypass_eligible_with_parity(
+    const LatentWorld& world,
+    const LatentRequest& req,
+    const std::unordered_map<ShardId, DiskId>& logical_disk,
+    ShardId parity_shard,
+    double parity_lat,
+    const std::vector<std::pair<ShardId, double>>& data_lat)
+{
+    auto all = sorted_with_parity(data_lat, parity_shard, parity_lat);
+    bool parity_in_k = false;
+    std::unordered_map<ShardId, bool> in_k;
+    for (int i = 0; i < K; ++i) {
+        in_k[all[i].first] = true;
+        if (all[i].first == parity_shard)
+            parity_in_k = true;
+    }
+    return positive_data_bypassed_by_parity(
+        world, req, logical_disk, in_k, parity_in_k);
+}
+
+static double coverage_pct(long triggered, long eligible) {
+    if (eligible <= 0) return static_cast<double>(NOT_APPLICABLE);
+    return static_cast<double>(triggered) * 100.0 / static_cast<double>(eligible);
+}
+
 static std::vector<DynamicWindowResult> make_dynamic_windows(const LatentWorld& world) {
     std::vector<DynamicWindowResult> windows(world.num_windows);
     for (int w = 0; w < world.num_windows; ++w) {
@@ -1150,6 +1191,22 @@ static void finalize_dynamic_result(DynamicRunResult& result,
         result.post_onset_p99_auc_ms +=
             std::max(result.windows.at(w).p99 - baseline_p99, 0.0);
     }
+
+    std::vector<double> post_warmup_p99;
+    std::vector<double> severe_p99;
+    for (int w = FIRST_DYNAMIC_ONSET_WINDOW; w < world.num_windows; ++w) {
+        post_warmup_p99.push_back(result.windows.at(w).p99);
+        if (is_severe_state(state_for_disk_window(world.schedule, MILD_DISK, w)) ||
+            is_severe_state(state_for_disk_window(world.schedule, SEVERE_DISK, w))) {
+            severe_p99.push_back(result.windows.at(w).p99);
+        }
+    }
+    result.post_warmup_windowed_p99_ms =
+        post_warmup_p99.empty() ? static_cast<double>(NOT_APPLICABLE)
+                                : percentile_copy(post_warmup_p99, 0.50);
+    result.severe_window_p99_ms =
+        severe_p99.empty() ? static_cast<double>(NOT_APPLICABLE)
+                           : percentile_copy(severe_p99, 0.50);
 }
 
 static DynamicRunResult run_dynamic_policy(const LatentWorld& world,
@@ -1170,6 +1227,9 @@ static DynamicRunResult run_dynamic_policy(const LatentWorld& world,
         result.migration_true_positives = NOT_APPLICABLE;
         result.aggregate.migration_false_positives = NOT_APPLICABLE;
         result.migration_false_negatives = NOT_APPLICABLE;
+    } else {
+        result.read_bypass_eligible_events = 0;
+        result.read_bypass_triggered_events = 0;
     }
 
     const int first_onset_read = FIRST_DYNAMIC_ONSET_WINDOW * world.window_size;
@@ -1185,6 +1245,7 @@ static DynamicRunResult run_dynamic_policy(const LatentWorld& world,
         ShardId parity_shard = parity.shard;
         DiskId parity_disk = logical_disk_for(logical_disk, parity);
         double parity_lat = latency_on_disk(parity, parity_disk);
+        bool read_bypass_eligible = false;
 
         if (config.kind == PolicyKind::HealthEC) {
             for (const auto& sh : req.data) {
@@ -1193,6 +1254,10 @@ static DynamicRunResult run_dynamic_policy(const LatentWorld& world,
                                        latency_on_disk(sh, disk),
                                        config.health_ec_params);
             }
+            read_bypass_eligible = read_bypass_eligible_with_parity(
+                world, req, logical_disk, parity_shard, parity_lat, data_lat);
+            if (read_bypass_eligible)
+                result.read_bypass_eligible_events++;
         }
 
         if (config.kind == PolicyKind::VanillaEC) {
@@ -1305,6 +1370,8 @@ static DynamicRunResult run_dynamic_policy(const LatentWorld& world,
         }
 
         record_extra_parity_read(result, world, req, logical_disk);
+        if (read_bypass_eligible)
+            result.read_bypass_triggered_events++;
         update_observed_health(disk_health, parity_disk, parity_lat, p);
         if (req.read_index >= first_onset_read &&
             request_has_positive_data(world, req, logical_disk) &&
@@ -1467,7 +1534,7 @@ static void print_static_csv_row(const RuntimeConfig& runtime,
               << r.migration_false_positives << "\n";
 }
 
-static void print_dynamic_csv_header()
+static void print_dynamic_csv_header(const RuntimeConfig& runtime)
 {
     std::cout
         << "scenario,seed,num_reads,num_stripes,zipf_s,num_windows,window_size,"
@@ -1477,7 +1544,14 @@ static void print_dynamic_csv_header()
         << "recovery_parity_reads,proactive_or_degraded_reads,decode_count,"
         << "migration_triggers,migration_true_positives,migration_false_positives,"
         << "migration_false_negatives,first_detection_latency_reads,"
-        << "first_mitigation_latency_reads,recovery_regret_reads\n";
+        << "first_mitigation_latency_reads,recovery_regret_reads";
+    if (runtime.extended_metrics) {
+        std::cout
+            << ",post_warmup_windowed_p99_ms,severe_window_p99_ms,"
+            << "read_bypass_eligible_events,read_bypass_triggered_events,"
+            << "read_bypass_coverage_pct";
+    }
+    std::cout << "\n";
 }
 
 static void print_dynamic_csv_row(const RuntimeConfig& runtime,
@@ -1515,7 +1589,17 @@ static void print_dynamic_csv_row(const RuntimeConfig& runtime,
               << r.migration_false_negatives << ','
               << r.first_detection_latency_reads << ','
               << r.first_mitigation_latency_reads << ','
-              << r.recovery_regret_reads << "\n";
+              << r.recovery_regret_reads;
+    if (runtime.extended_metrics) {
+        std::cout << ','
+                  << r.post_warmup_windowed_p99_ms << ','
+                  << r.severe_window_p99_ms << ','
+                  << r.read_bypass_eligible_events << ','
+                  << r.read_bypass_triggered_events << ','
+                  << coverage_pct(r.read_bypass_triggered_events,
+                                  r.read_bypass_eligible_events);
+    }
+    std::cout << "\n";
 }
 
 static void print_windowed_csv_header()
@@ -1641,7 +1725,7 @@ int main(int argc, char** argv) {
             for (std::size_t i = 0; i < configs.size(); ++i)
                 print_table_row(configs[i].kind, results[i].aggregate, vanilla_p99);
         } else if (runtime.format == OutputFormat::Csv) {
-            print_dynamic_csv_header();
+            print_dynamic_csv_header(runtime);
             for (std::size_t i = 0; i < configs.size(); ++i)
                 print_dynamic_csv_row(
                     runtime, world, configs[i].kind, results[i], vanilla_p99);
