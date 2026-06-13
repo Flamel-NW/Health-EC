@@ -1,0 +1,13 @@
+T2.7.1 aggressive read-bypass calibration validation
+LOCKED=UNBRACKETED
+mode=full
+raw_rows=6020
+summary_rows=601
+feasible_count=141
+grids_run=primary;expanded
+validation_seeds=1001;1002;1003;1004;1005;1006;1007;1008;1009;1010
+formal_test_seeds_used=0
+extended_metrics_schema=PASS
+tdr_baseline=PASS
+t2_6_locked_baseline=PASS
+objective_columns=PASS

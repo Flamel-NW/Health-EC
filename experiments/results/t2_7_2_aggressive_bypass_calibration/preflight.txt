@@ -1,0 +1,32 @@
+T2.7.1 aggressive bypass full preflight
+
+$ git status --short --branch
+returncode=0
+--- stdout ---
+## dev...origin/dev
+?? experiments/results/t2_7_2_aggressive_bypass_calibration/
+
+$ git status --short --branch
+returncode=0
+--- stdout ---
+## master...origin/master
+ M scripts/t2_7_1_aggressive_bypass_calibration.py
+
+$ cat /proc/loadavg
+returncode=0
+--- stdout ---
+1.96 3.45 3.12 1/408 17
+
+$ free -h
+returncode=0
+--- stdout ---
+               total        used        free      shared  buff/cache   available
+Mem:            31Gi       1.8Gi        28Gi       1.1Mi       1.3Gi        29Gi
+Swap:             0B          0B          0B
+
+$ df -h /
+returncode=0
+--- stdout ---
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/root        48G   35G   14G  72% /
+
