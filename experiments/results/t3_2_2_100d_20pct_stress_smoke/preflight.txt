@@ -1,0 +1,42 @@
+T3.2.2 100d 20pct stress smoke preflight
+
+$ git status --short --branch
+returncode=0
+--- stdout ---
+## dev...origin/dev
+?? experiments/results/t3_2_2_100d_20pct_stress_smoke/
+
+$ git status --short --branch
+returncode=0
+--- stdout ---
+## master...origin/master
+
+$ cat /proc/loadavg
+returncode=0
+--- stdout ---
+0.45 0.27 0.17 1/410 20
+
+$ free -h
+returncode=0
+--- stdout ---
+               total        used        free      shared  buff/cache   available
+Mem:            31Gi       2.0Gi        28Gi        12Mi       1.7Gi        29Gi
+Swap:             0B          0B          0B
+
+$ df -h /
+returncode=0
+--- stdout ---
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/root        48G   35G   14G  73% /
+
+$ vmstat 1 5
+returncode=0
+--- stdout ---
+procs -----------memory---------- ---swap-- -----io---- -system-- -------cpu-------
+ r  b   swpd   free   buff  cache   si   so    bi    bo   in   cs us sy id wa st gu
+ 0  0      0 29449856 114456 1643840    0    0    49  1517 1447    1  1  0 99  0  0  0
+ 0  0      0 29451504 114456 1643848    0    0     0     0 1620 1618  1  0 99  0  0  0
+ 0  0      0 29453208 114456 1643852    0    0     0     0 1615 1606  1  0 99  0  0  0
+ 0  0      0 29453716 114456 1643852    0    0     0     0  817  714  0  0 100  0  0  0
+ 0  0      0 29453716 114456 1643852    0    0     0     0  765  711  0  0 100  0  0  0
+
