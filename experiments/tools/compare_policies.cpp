@@ -22,6 +22,7 @@
 #include <iomanip>
 #include <iostream>
 #include <limits>
+#include <memory>
 #include <stdexcept>
 #include <string>
 #include <unordered_map>
@@ -36,7 +37,8 @@ using namespace healthec::sim;
 
 static constexpr int      K                   = 4;
 static constexpr int      M                   = 2;
-static constexpr int      NUM_DISKS           = 10;
+static constexpr int      DEFAULT_NUM_DISKS   = 10;
+static constexpr int      REALISTIC_NUM_DISKS = 100;
 static constexpr int      DEFAULT_NUM_STRIPES = 500;
 static constexpr int      DEFAULT_NUM_READS   = 20000;
 static constexpr uint64_t DEFAULT_SEED        = 42;
@@ -44,8 +46,10 @@ static constexpr double   DEFAULT_ZIPF_S      = 1.0;
 static constexpr double   DEFAULT_TIMEOUT_MS  = 30.0;
 static constexpr double   DYNAMIC_DEFAULT_TIMEOUT_MS = 15.0;
 
-static constexpr int MILD_DISK   = 8;
-static constexpr int SEVERE_DISK = 9;
+static constexpr int DEFAULT_SLOW_DISK_A = 8;
+static constexpr int DEFAULT_SLOW_DISK_B = 9;
+static constexpr int REALISTIC_SLOW_DISK_A = 98;
+static constexpr int REALISTIC_SLOW_DISK_B = 99;
 
 static constexpr int DYNAMIC_NUM_WINDOWS        = 20;
 static constexpr int FIRST_DYNAMIC_ONSET_WINDOW = 3;
@@ -65,6 +69,59 @@ static const DiskProfile PROFILE_SEVERE{
 static const DiskProfile PROFILE_RECOVERY{
     .base_mean_ms=9.0, .base_jitter_ms=3.5, .slow_mode=true,
     .slow_mean_ms=13.5, .slow_jitter_ms=5.0, .spike_prob=0.005, .spike_ms=80.0};
+
+struct ScenarioSpec {
+    const char* name;
+    bool is_dynamic;
+    int num_disks;
+    DiskId slow_disk_a;
+    DiskId slow_disk_b;
+    bool stripe0_special_case;
+    bool precompute_all_disk_latencies;
+};
+
+static ScenarioSpec scenario_spec_for_name(const std::string& scenario) {
+    if (scenario == "canonical_stress20") {
+        return {
+            "canonical_stress20",
+            false,
+            DEFAULT_NUM_DISKS,
+            DEFAULT_SLOW_DISK_A,
+            DEFAULT_SLOW_DISK_B,
+            true,
+            false,
+        };
+    }
+    if (scenario == "dynamic_degradation") {
+        return {
+            "dynamic_degradation",
+            true,
+            DEFAULT_NUM_DISKS,
+            DEFAULT_SLOW_DISK_A,
+            DEFAULT_SLOW_DISK_B,
+            true,
+            true,
+        };
+    }
+    if (scenario == "dynamic_realistic_100d_2pct_hdd") {
+        return {
+            "dynamic_realistic_100d_2pct_hdd",
+            true,
+            REALISTIC_NUM_DISKS,
+            REALISTIC_SLOW_DISK_A,
+            REALISTIC_SLOW_DISK_B,
+            false,
+            false,
+        };
+    }
+    throw std::invalid_argument("invalid --scenario: " + scenario);
+}
+
+static bool is_valid_scenario_name(const std::string& scenario) {
+    return scenario == "canonical_stress20" ||
+           scenario == "dynamic_degradation" ||
+           scenario == "dynamic_realistic_100d_2pct_hdd";
+}
 
 // Helpers.
 
@@ -95,9 +152,9 @@ static ScoreParams locked_health_ec_params() {
     return p;
 }
 
-static void configure_slow_disks(DiskSimulator& sim) {
-    sim.set_profile(MILD_DISK, PROFILE_MILD);
-    sim.set_profile(SEVERE_DISK, PROFILE_SEVERE);
+static void configure_slow_disks(DiskSimulator& sim, const ScenarioSpec& spec) {
+    sim.set_profile(spec.slow_disk_a, PROFILE_MILD);
+    sim.set_profile(spec.slow_disk_b, PROFILE_SEVERE);
 }
 
 static WorkloadGenerator make_workload(int num_stripes, double zipf_s, uint64_t seed) {
@@ -118,15 +175,17 @@ struct Layout {
     std::unordered_map<ShardId, bool> is_slow;
 };
 
-static Layout build_layout(int num_stripes) {
+static Layout build_layout(int num_stripes, const ScenarioSpec& spec) {
     Layout L;
     for (int s = 0; s < num_stripes; ++s) {
         StripeLayout sl;
-        const int disk_map_s0[] = {6, 7, MILD_DISK, SEVERE_DISK, 4, 5};
+        const int disk_map_s0[] = {
+            6, 7, spec.slow_disk_a, spec.slow_disk_b, 4, 5};
         for (int i = 0; i < K + M; ++i) {
             ShardId sh = make_shard(s, i);
-            DiskId dk = (s == 0) ? disk_map_s0[i]
-                                 : (s * (K + M) + i) % NUM_DISKS;
+            DiskId dk = (spec.stripe0_special_case && s == 0)
+                ? disk_map_s0[i]
+                : (s * (K + M) + i) % spec.num_disks;
             sl.disk_of[sh] = dk;
             if (i < K) sl.data_shards.push_back(sh);
             else sl.parity_shards.push_back(sh);
@@ -138,7 +197,7 @@ static Layout build_layout(int num_stripes) {
         (void)sid;
         for (ShardId sh : sl.data_shards) {
             DiskId dk = sl.disk_of.at(sh);
-            if (dk == MILD_DISK || dk == SEVERE_DISK)
+            if (dk == spec.slow_disk_a || dk == spec.slow_disk_b)
                 L.is_slow[sh] = true;
         }
     }
@@ -284,8 +343,7 @@ static RuntimeConfig parse_args(int argc, char** argv) {
                 throw std::invalid_argument("--zipf-s must be positive");
         } else if (arg == "--scenario") {
             cfg.scenario = require_value(arg);
-            if (cfg.scenario != "canonical_stress20" &&
-                cfg.scenario != "dynamic_degradation") {
+            if (!is_valid_scenario_name(cfg.scenario)) {
                 throw std::invalid_argument("invalid --scenario: " + cfg.scenario);
             }
         } else if (arg == "--policy") {
@@ -334,7 +392,7 @@ static RuntimeConfig parse_args(int argc, char** argv) {
 }
 
 static bool is_dynamic_scenario(const RuntimeConfig& cfg) {
-    return cfg.scenario == "dynamic_degradation";
+    return scenario_spec_for_name(cfg.scenario).is_dynamic;
 }
 
 static void apply_runtime_defaults(RuntimeConfig& cfg) {
@@ -347,16 +405,16 @@ static void validate_runtime_config(const RuntimeConfig& cfg) {
         (cfg.format == OutputFormat::WindowedCsv ||
          cfg.format == OutputFormat::EventTrace)) {
         throw std::invalid_argument(
-            "windowed_csv and event_trace require --scenario dynamic_degradation");
+            "windowed_csv and event_trace require a dynamic scenario");
     }
     if (is_dynamic_scenario(cfg) && cfg.num_reads % DYNAMIC_NUM_WINDOWS != 0) {
         throw std::invalid_argument(
-            "dynamic_degradation requires --num-reads divisible by 20");
+            "dynamic scenarios require --num-reads divisible by 20");
     }
     if (cfg.extended_metrics &&
         (!is_dynamic_scenario(cfg) || cfg.format != OutputFormat::Csv)) {
         throw std::invalid_argument(
-            "extended metrics require --scenario dynamic_degradation --format csv");
+            "extended metrics require a dynamic scenario with --format csv");
     }
 }
 
@@ -592,9 +650,10 @@ static RunResult run_one_policy(const RuntimeConfig& runtime,
                                 const Layout& layout,
                                 const PolicyConfig& config)
 {
+    const ScenarioSpec spec = scenario_spec_for_name(runtime.scenario);
     const std::string TMP = runtime_tmp_dir("healthec_compare_policies", runtime.seed);
-    DiskSimulator sim(TMP, NUM_DISKS, PROFILE_BASELINE, runtime.seed);
-    configure_slow_disks(sim);
+    DiskSimulator sim(TMP, spec.num_disks, PROFILE_BASELINE, runtime.seed);
+    configure_slow_disks(sim, spec);
     auto workload = make_workload(runtime.num_stripes, runtime.zipf_s, runtime.seed);
     return run_policy(sim, layout, workload, config, runtime.num_reads);
 }
@@ -621,9 +680,11 @@ struct LatentShard {
     ShardId shard;
     DiskId disk;
     bool is_parity;
+    int read_index;
+    int window_id;
     DiskState state;
     double latency_ms;
-    std::array<double, NUM_DISKS> latency_by_disk{};
+    std::vector<double> latency_by_disk;
 };
 
 struct LatentRequest {
@@ -638,6 +699,12 @@ struct LatentRequest {
 struct LatentWorld {
     int num_windows = DYNAMIC_NUM_WINDOWS;
     int window_size = 0;
+    int first_onset_window = FIRST_DYNAMIC_ONSET_WINDOW;
+    int num_disks = DEFAULT_NUM_DISKS;
+    DiskId slow_disk_a = DEFAULT_SLOW_DISK_A;
+    DiskId slow_disk_b = DEFAULT_SLOW_DISK_B;
+    uint64_t seed = DEFAULT_SEED;
+    bool precompute_all_disk_latencies = true;
     std::vector<ScheduleEvent> schedule;
     std::vector<LatentRequest> requests;
 };
@@ -714,21 +781,21 @@ static DiskProfile profile_for_state(DiskState state) {
     return PROFILE_BASELINE;
 }
 
-static std::vector<ScheduleEvent> dynamic_schedule() {
+static std::vector<ScheduleEvent> dynamic_schedule(const ScenarioSpec& spec) {
     return {
-        {0, MILD_DISK,   DiskState::Healthy,    0,  3, "warmup_before_first_onset"},
-        {1, MILD_DISK,   DiskState::MildSlow,   3,  6, "first_gradual_degradation"},
-        {2, MILD_DISK,   DiskState::SevereSlow, 6,  9, "sustained_severe_period"},
-        {3, MILD_DISK,   DiskState::Recovery,   9, 11, "partial_recovery"},
-        {4, MILD_DISK,   DiskState::Healthy,   11, 14, "recovered_interval"},
-        {5, MILD_DISK,   DiskState::MildSlow,  14, 15, "relapse"},
-        {6, MILD_DISK,   DiskState::Recovery,  15, 16, "relapse_recovery"},
-        {7, MILD_DISK,   DiskState::Healthy,   16, 20, "post_recovery_observation"},
-        {8, SEVERE_DISK, DiskState::Healthy,    0,  9, "staggered_later_onset"},
-        {9, SEVERE_DISK, DiskState::MildSlow,   9, 11, "second_disk_mild_period"},
-        {10, SEVERE_DISK, DiskState::SevereSlow, 11, 14, "second_disk_severe_period"},
-        {11, SEVERE_DISK, DiskState::Recovery,  14, 16, "second_disk_recovery"},
-        {12, SEVERE_DISK, DiskState::Healthy,   16, 20, "second_disk_post_recovery"},
+        {0, spec.slow_disk_a, DiskState::Healthy,    0,  3, "warmup_before_first_onset"},
+        {1, spec.slow_disk_a, DiskState::MildSlow,   3,  6, "first_gradual_degradation"},
+        {2, spec.slow_disk_a, DiskState::SevereSlow, 6,  9, "sustained_severe_period"},
+        {3, spec.slow_disk_a, DiskState::Recovery,   9, 11, "partial_recovery"},
+        {4, spec.slow_disk_a, DiskState::Healthy,   11, 14, "recovered_interval"},
+        {5, spec.slow_disk_a, DiskState::MildSlow,  14, 15, "relapse"},
+        {6, spec.slow_disk_a, DiskState::Recovery,  15, 16, "relapse_recovery"},
+        {7, spec.slow_disk_a, DiskState::Healthy,   16, 20, "post_recovery_observation"},
+        {8, spec.slow_disk_b, DiskState::Healthy,    0,  9, "staggered_later_onset"},
+        {9, spec.slow_disk_b, DiskState::MildSlow,   9, 11, "second_disk_mild_period"},
+        {10, spec.slow_disk_b, DiskState::SevereSlow, 11, 14, "second_disk_severe_period"},
+        {11, spec.slow_disk_b, DiskState::Recovery,  14, 16, "second_disk_recovery"},
+        {12, spec.slow_disk_b, DiskState::Healthy,   16, 20, "second_disk_post_recovery"},
     };
 }
 
@@ -779,10 +846,26 @@ static DiskId logical_disk_for(const std::unordered_map<ShardId, DiskId>& logica
     return (it != logical_disk.end()) ? it->second : shard.disk;
 }
 
-static double latency_on_disk(const LatentShard& shard, DiskId disk) {
-    if (disk < 0 || disk >= NUM_DISKS)
+static double deterministic_latency_ms(uint64_t seed,
+                                       int read_index,
+                                       ShardId shard,
+                                       DiskId disk,
+                                       bool is_parity,
+                                       const DiskProfile& profile);
+
+static double latency_on_disk(const LatentWorld& world,
+                              const LatentShard& shard,
+                              DiskId disk) {
+    if (disk < 0 || disk >= world.num_disks)
         throw std::out_of_range("latency_on_disk: disk out of range");
-    return shard.latency_by_disk[disk];
+    if (!shard.latency_by_disk.empty())
+        return shard.latency_by_disk.at(static_cast<std::size_t>(disk));
+
+    DiskState disk_state = state_for_disk_window(
+        world.schedule, disk, shard.window_id);
+    return deterministic_latency_ms(
+        world.seed, shard.read_index, shard.shard, disk,
+        shard.is_parity, profile_for_state(disk_state));
 }
 
 static std::unordered_map<ShardId, DiskId> initial_logical_disks(
@@ -841,26 +924,108 @@ static bool request_has_post_slow_data(const LatentRequest& req,
 static int active_slow_disks_for_window(
     const std::vector<ScheduleEvent>& schedule, int window_id)
 {
-    int count = 0;
-    if (is_migration_positive(state_for_disk_window(schedule, MILD_DISK, window_id)))
-        count++;
-    if (is_migration_positive(state_for_disk_window(schedule, SEVERE_DISK, window_id)))
-        count++;
-    return count;
+    std::unordered_map<DiskId, bool> active;
+    for (const auto& e : schedule) {
+        if (window_id >= e.start_window &&
+            window_id < e.end_window &&
+            is_migration_positive(e.state)) {
+            active[e.disk_id] = true;
+        }
+    }
+    return static_cast<int>(active.size());
+}
+
+static bool any_severe_disk_for_window(
+    const std::vector<ScheduleEvent>& schedule, int window_id)
+{
+    for (const auto& e : schedule) {
+        if (window_id >= e.start_window &&
+            window_id < e.end_window &&
+            is_severe_state(e.state)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+static uint64_t splitmix64_next(uint64_t& x) {
+    uint64_t z = (x += 0x9E3779B97F4A7C15ULL);
+    z = (z ^ (z >> 30)) * 0xBF58476D1CE4E5B9ULL;
+    z = (z ^ (z >> 27)) * 0x94D049BB133111EBULL;
+    return z ^ (z >> 31);
+}
+
+static double uniform01(uint64_t& state) {
+    constexpr double DENOM = 9007199254740992.0; // 2^53
+    return static_cast<double>(splitmix64_next(state) >> 11) / DENOM;
+}
+
+static uint64_t deterministic_latency_seed(uint64_t seed,
+                                           int read_index,
+                                           ShardId shard,
+                                           DiskId disk,
+                                           bool is_parity)
+{
+    uint64_t state = seed ^ 0xD1B54A32D192ED03ULL;
+    state ^= static_cast<uint64_t>(read_index) * 0x9E3779B97F4A7C15ULL;
+    state ^= static_cast<uint64_t>(shard) * 0xBF58476D1CE4E5B9ULL;
+    state ^= static_cast<uint64_t>(disk) * 0x94D049BB133111EBULL;
+    if (is_parity)
+        state ^= 0xA24BAED4963EE407ULL;
+    return splitmix64_next(state);
+}
+
+static double deterministic_latency_ms(uint64_t seed,
+                                       int read_index,
+                                       ShardId shard,
+                                       DiskId disk,
+                                       bool is_parity,
+                                       const DiskProfile& profile)
+{
+    uint64_t state = deterministic_latency_seed(
+        seed, read_index, shard, disk, is_parity);
+    double mean = profile.slow_mode ? profile.slow_mean_ms : profile.base_mean_ms;
+    double jitter = profile.slow_mode ? profile.slow_jitter_ms
+                                      : profile.base_jitter_ms;
+
+    double lat = mean;
+    if (jitter != 0.0) {
+        constexpr double TWO_PI = 6.28318530717958647692;
+        double u1 = std::max(uniform01(state), std::numeric_limits<double>::min());
+        double u2 = uniform01(state);
+        double z = std::sqrt(-2.0 * std::log(u1)) * std::cos(TWO_PI * u2);
+        lat = mean + jitter * z;
+    }
+    if (profile.slow_mode && profile.spike_prob > 0.0 &&
+        uniform01(state) < profile.spike_prob) {
+        lat += profile.spike_ms;
+    }
+    return std::max(0.0, lat);
 }
 
 static LatentWorld build_dynamic_world(const RuntimeConfig& runtime,
                                        const Layout& layout)
 {
+    const ScenarioSpec spec = scenario_spec_for_name(runtime.scenario);
     LatentWorld world;
     world.window_size = runtime.num_reads / DYNAMIC_NUM_WINDOWS;
-    world.schedule = dynamic_schedule();
+    world.first_onset_window = FIRST_DYNAMIC_ONSET_WINDOW;
+    world.num_disks = spec.num_disks;
+    world.slow_disk_a = spec.slow_disk_a;
+    world.slow_disk_b = spec.slow_disk_b;
+    world.seed = runtime.seed;
+    world.precompute_all_disk_latencies = spec.precompute_all_disk_latencies;
+    world.schedule = dynamic_schedule(spec);
     world.requests.reserve(runtime.num_reads);
 
-    const std::string TMP =
-        runtime_tmp_dir("healthec_compare_policies_dynamic_trace", runtime.seed);
-    std::filesystem::remove_all(TMP);
-    DiskSimulator sim(TMP, NUM_DISKS, PROFILE_BASELINE, runtime.seed);
+    const std::string TMP = runtime_tmp_dir(
+        "healthec_compare_policies_dynamic_trace", runtime.seed);
+    std::unique_ptr<DiskSimulator> sim;
+    if (world.precompute_all_disk_latencies) {
+        std::filesystem::remove_all(TMP);
+        sim = std::make_unique<DiskSimulator>(
+            TMP, world.num_disks, PROFILE_BASELINE, runtime.seed);
+    }
     auto workload = make_workload(runtime.num_stripes, runtime.zipf_s, runtime.seed);
 
     for (int r = 0; r < runtime.num_reads; ++r) {
@@ -876,41 +1041,45 @@ static LatentWorld build_dynamic_world(const RuntimeConfig& runtime,
         req.data.reserve(sl.data_shards.size());
         req.parity.reserve(sl.parity_shards.size());
 
-        for (ShardId sh : sl.data_shards) {
+        auto make_latent = [&](ShardId sh, bool is_parity) {
             DiskId disk = sl.disk_of.at(sh);
             DiskState state = state_for_disk_window(world.schedule, disk, window_id);
-            LatentShard latent{.shard=sh, .disk=disk, .is_parity=false,
-                                .state=state, .latency_ms=0.0};
-            for (DiskId d = 0; d < NUM_DISKS; ++d) {
-                DiskState disk_state = state_for_disk_window(world.schedule, d, window_id);
-                sim.set_profile(d, profile_for_state(disk_state));
-                latent.latency_by_disk[d] = sim.sample_latency_ms(d);
+            LatentShard latent{.shard=sh, .disk=disk, .is_parity=is_parity,
+                                .read_index=r, .window_id=window_id,
+                                .state=state, .latency_ms=0.0,
+                                .latency_by_disk={}};
+            if (world.precompute_all_disk_latencies) {
+                latent.latency_by_disk.resize(
+                    static_cast<std::size_t>(world.num_disks));
+                for (DiskId d = 0; d < world.num_disks; ++d) {
+                    DiskState disk_state = state_for_disk_window(
+                        world.schedule, d, window_id);
+                    sim->set_profile(d, profile_for_state(disk_state));
+                    latent.latency_by_disk[static_cast<std::size_t>(d)] =
+                        sim->sample_latency_ms(d);
+                }
             }
-            latent.latency_ms = latent.latency_by_disk[disk];
-            req.data.push_back(std::move(latent));
+            latent.latency_ms = latency_on_disk(world, latent, disk);
+            return latent;
+        };
+
+        for (ShardId sh : sl.data_shards) {
+            req.data.push_back(make_latent(sh, false));
         }
         for (ShardId sh : sl.parity_shards) {
-            DiskId disk = sl.disk_of.at(sh);
-            DiskState state = state_for_disk_window(world.schedule, disk, window_id);
-            LatentShard latent{.shard=sh, .disk=disk, .is_parity=true,
-                                .state=state, .latency_ms=0.0};
-            for (DiskId d = 0; d < NUM_DISKS; ++d) {
-                DiskState disk_state = state_for_disk_window(world.schedule, d, window_id);
-                sim.set_profile(d, profile_for_state(disk_state));
-                latent.latency_by_disk[d] = sim.sample_latency_ms(d);
-            }
-            latent.latency_ms = latent.latency_by_disk[disk];
-            req.parity.push_back(std::move(latent));
+            req.parity.push_back(make_latent(sh, true));
         }
 
         world.requests.push_back(std::move(req));
     }
 
-    std::filesystem::remove_all(TMP);
+    if (world.precompute_all_disk_latencies)
+        std::filesystem::remove_all(TMP);
     return world;
 }
 
 static std::vector<std::pair<ShardId, double>> latent_data_latencies(
+    const LatentWorld& world,
     const LatentRequest& req,
     const std::unordered_map<ShardId, DiskId>& logical_disk)
 {
@@ -918,7 +1087,7 @@ static std::vector<std::pair<ShardId, double>> latent_data_latencies(
     out.reserve(req.data.size());
     for (const auto& sh : req.data) {
         DiskId disk = logical_disk_for(logical_disk, sh);
-        out.emplace_back(sh.shard, latency_on_disk(sh, disk));
+        out.emplace_back(sh.shard, latency_on_disk(world, sh, disk));
     }
     return out;
 }
@@ -926,7 +1095,7 @@ static std::vector<std::pair<ShardId, double>> latent_data_latencies(
 static const LatentShard& select_parity_for_dynamic_read(
     const LatentRequest& req,
     const std::unordered_map<ShardId, DiskId>& logical_disk,
-    const std::array<double, NUM_DISKS>& disk_health,
+    const std::vector<double>& disk_health,
     bool health_aware)
 {
     const LatentShard* best = &req.parity.front();
@@ -1033,7 +1202,7 @@ static void record_extra_parity_read(DynamicRunResult& result,
     win.parity_reads++;
     win.proactive_or_degraded_reads++;
 
-    if (req.window_id < FIRST_DYNAMIC_ONSET_WINDOW)
+    if (req.window_id < world.first_onset_window)
         result.pre_slowdown_parity_reads++;
     if (request_has_recovery_data(world, req, logical_disk))
         result.recovery_parity_reads++;
@@ -1054,7 +1223,7 @@ static void record_latency(DynamicRunResult& result,
     result.windows.at(req.window_id).latencies.push_back(latency_ms);
 }
 
-static void update_observed_health(std::array<double, NUM_DISKS>& disk_health,
+static void update_observed_health(std::vector<double>& disk_health,
                                    DiskId disk,
                                    double latency_ms,
                                    const ScoreParams& params)
@@ -1068,10 +1237,10 @@ static void update_observed_health(std::array<double, NUM_DISKS>& disk_health,
 static DiskId select_migration_target(
     const LatentRequest& req,
     const std::unordered_map<ShardId, DiskId>& logical_disk,
-    const std::array<double, NUM_DISKS>& disk_health,
+    const std::vector<double>& disk_health,
     DiskId current_disk)
 {
-    std::array<bool, NUM_DISKS> used{};
+    std::vector<bool> used(disk_health.size(), false);
     for (const auto& sh : req.data)
         used[logical_disk_for(logical_disk, sh)] = true;
     for (const auto& sh : req.parity)
@@ -1080,7 +1249,7 @@ static DiskId select_migration_target(
     used[current_disk] = false;
     DiskId target = -1;
     double target_health = disk_health[current_disk];
-    for (DiskId d = 0; d < NUM_DISKS; ++d) {
+    for (DiskId d = 0; d < static_cast<DiskId>(disk_health.size()); ++d) {
         if (used[d]) continue;
         if (disk_health[d] > target_health) {
             target = d;
@@ -1178,14 +1347,14 @@ static void finalize_dynamic_result(DynamicRunResult& result,
 
     std::vector<double> warmup_p95;
     std::vector<double> warmup_p99;
-    for (int w = 0; w < FIRST_DYNAMIC_ONSET_WINDOW; ++w) {
+    for (int w = 0; w < world.first_onset_window; ++w) {
         warmup_p95.push_back(result.windows.at(w).p95);
         warmup_p99.push_back(result.windows.at(w).p99);
     }
     double baseline_p95 = percentile_copy(warmup_p95, 0.50);
     double baseline_p99 = percentile_copy(warmup_p99, 0.50);
 
-    for (int w = FIRST_DYNAMIC_ONSET_WINDOW; w < world.num_windows; ++w) {
+    for (int w = world.first_onset_window; w < world.num_windows; ++w) {
         result.post_onset_p95_auc_ms +=
             std::max(result.windows.at(w).p95 - baseline_p95, 0.0);
         result.post_onset_p99_auc_ms +=
@@ -1194,10 +1363,9 @@ static void finalize_dynamic_result(DynamicRunResult& result,
 
     std::vector<double> post_warmup_p99;
     std::vector<double> severe_p99;
-    for (int w = FIRST_DYNAMIC_ONSET_WINDOW; w < world.num_windows; ++w) {
+    for (int w = world.first_onset_window; w < world.num_windows; ++w) {
         post_warmup_p99.push_back(result.windows.at(w).p99);
-        if (is_severe_state(state_for_disk_window(world.schedule, MILD_DISK, w)) ||
-            is_severe_state(state_for_disk_window(world.schedule, SEVERE_DISK, w))) {
+        if (any_severe_disk_for_window(world.schedule, w)) {
             severe_p99.push_back(result.windows.at(w).p99);
         }
     }
@@ -1216,8 +1384,8 @@ static DynamicRunResult run_dynamic_policy(const LatentWorld& world,
     struct ScoreState { double S = 0.0; double D = 0.0; };
     std::unordered_map<ShardId, ScoreState> scores;
     std::unordered_map<ShardId, DiskId> logical_disk = initial_logical_disks(layout);
-    std::array<double, NUM_DISKS> disk_health{};
-    disk_health.fill(1.0);
+    std::vector<double> disk_health(
+        static_cast<std::size_t>(world.num_disks), 1.0);
     std::unordered_map<int, std::unordered_map<ShardId, EventShardStats>> event_stats;
 
     DynamicRunResult result;
@@ -1232,26 +1400,26 @@ static DynamicRunResult run_dynamic_policy(const LatentWorld& world,
         result.read_bypass_triggered_events = 0;
     }
 
-    const int first_onset_read = FIRST_DYNAMIC_ONSET_WINDOW * world.window_size;
+    const int first_onset_read = world.first_onset_window * world.window_size;
 
     for (const auto& req : world.requests) {
         record_data_reads(result, req);
         if (config.kind == PolicyKind::HealthEC)
             record_positive_event_reads(world, req, logical_disk, event_stats);
 
-        auto data_lat = latent_data_latencies(req, logical_disk);
+        auto data_lat = latent_data_latencies(world, req, logical_disk);
         const LatentShard& parity = select_parity_for_dynamic_read(
             req, logical_disk, disk_health, config.kind == PolicyKind::HealthEC);
         ShardId parity_shard = parity.shard;
         DiskId parity_disk = logical_disk_for(logical_disk, parity);
-        double parity_lat = latency_on_disk(parity, parity_disk);
+        double parity_lat = latency_on_disk(world, parity, parity_disk);
         bool read_bypass_eligible = false;
 
         if (config.kind == PolicyKind::HealthEC) {
             for (const auto& sh : req.data) {
                 DiskId disk = logical_disk_for(logical_disk, sh);
                 update_observed_health(disk_health, disk,
-                                       latency_on_disk(sh, disk),
+                                       latency_on_disk(world, sh, disk),
                                        config.health_ec_params);
             }
             read_bypass_eligible = read_bypass_eligible_with_parity(
@@ -1440,6 +1608,7 @@ static DynamicRunResult run_dynamic_policy(const LatentWorld& world,
 static void print_table_header(const RuntimeConfig& runtime,
                                const ScoreParams& health_params)
 {
+    const ScenarioSpec spec = scenario_spec_for_name(runtime.scenario);
     std::cout << "compare_policies"
               << "  scenario=" << runtime.scenario
               << "  seed=" << runtime.seed
@@ -1447,12 +1616,12 @@ static void print_table_header(const RuntimeConfig& runtime,
               << "  stripes=" << runtime.num_stripes
               << "  zipf_s=" << runtime.zipf_s << "\n";
     if (is_dynamic_scenario(runtime)) {
-        std::cout << "Dynamic schedule: 20 windows; disk" << MILD_DISK
-                  << " first onset; disk" << SEVERE_DISK
+        std::cout << "Dynamic schedule: 20 windows; disk" << spec.slow_disk_a
+                  << " first onset; disk" << spec.slow_disk_b
                   << " staggered onset; recovery/relapse included\n";
     } else {
-        std::cout << "Slow disks: disk" << MILD_DISK << "=mild  disk"
-                  << SEVERE_DISK << "=severe  ratio=20% stress\n";
+        std::cout << "Slow disks: disk" << spec.slow_disk_a << "=mild  disk"
+                  << spec.slow_disk_b << "=severe  ratio=20% stress\n";
     }
     std::cout << "Timeout baseline: timeout_ms=" << runtime.timeout_ms << "\n";
     std::cout << "Health-EC locked params: theta_S=" << health_params.theta_S
@@ -1537,7 +1706,7 @@ static void print_static_csv_row(const RuntimeConfig& runtime,
 static void print_dynamic_csv_header(const RuntimeConfig& runtime)
 {
     std::cout
-        << "scenario,seed,num_reads,num_stripes,zipf_s,num_windows,window_size,"
+        << "scenario,num_disks,seed,num_reads,num_stripes,zipf_s,num_windows,window_size,"
         << "policy,timeout_ms,p50_ms,p95_ms,p99_ms,p99_improvement_pct,"
         << "post_onset_p95_auc_ms,post_onset_p99_auc_ms,issued_shard_reads,"
         << "bandwidth_overhead_pct,parity_reads,pre_slowdown_parity_reads,"
@@ -1562,6 +1731,7 @@ static void print_dynamic_csv_row(const RuntimeConfig& runtime,
 {
     std::cout << std::fixed << std::setprecision(1)
               << runtime.scenario << ','
+              << world.num_disks << ','
               << runtime.seed << ','
               << runtime.num_reads << ','
               << runtime.num_stripes << ','
@@ -1605,8 +1775,9 @@ static void print_dynamic_csv_row(const RuntimeConfig& runtime,
 static void print_windowed_csv_header()
 {
     std::cout
-        << "scenario,seed,num_reads,num_stripes,zipf_s,policy,timeout_ms,"
-        << "window_id,window_start_read,window_end_read,disk8_state,disk9_state,"
+        << "scenario,num_disks,seed,num_reads,num_stripes,zipf_s,policy,timeout_ms,"
+        << "window_id,window_start_read,window_end_read,"
+        << "slow_disk_a_id,slow_disk_a_state,slow_disk_b_id,slow_disk_b_state,"
         << "active_slow_disks,p50_ms,p95_ms,p99_ms,issued_shard_reads,"
         << "bandwidth_overhead_pct,parity_reads,proactive_or_degraded_reads,"
         << "decode_count,migration_triggers,migration_true_positives,"
@@ -1621,6 +1792,7 @@ static void print_windowed_csv_rows(const RuntimeConfig& runtime,
     for (const auto& win : result.windows) {
         std::cout << std::fixed << std::setprecision(1)
                   << runtime.scenario << ','
+                  << world.num_disks << ','
                   << runtime.seed << ','
                   << runtime.num_reads << ','
                   << runtime.num_stripes << ','
@@ -1630,10 +1802,12 @@ static void print_windowed_csv_rows(const RuntimeConfig& runtime,
                   << win.window_id << ','
                   << win.window_start_read << ','
                   << win.window_end_read << ','
+                  << world.slow_disk_a << ','
                   << disk_state_name(state_for_disk_window(
-                         world.schedule, MILD_DISK, win.window_id)) << ','
+                         world.schedule, world.slow_disk_a, win.window_id)) << ','
+                  << world.slow_disk_b << ','
                   << disk_state_name(state_for_disk_window(
-                         world.schedule, SEVERE_DISK, win.window_id)) << ','
+                         world.schedule, world.slow_disk_b, win.window_id)) << ','
                   << active_slow_disks_for_window(world.schedule, win.window_id) << ','
                   << win.p50 << ','
                   << win.p95 << ','
@@ -1652,13 +1826,15 @@ static void print_windowed_csv_rows(const RuntimeConfig& runtime,
 
 static void print_event_trace(const RuntimeConfig& runtime)
 {
+    const ScenarioSpec spec = scenario_spec_for_name(runtime.scenario);
     int window_size = runtime.num_reads / DYNAMIC_NUM_WINDOWS;
-    auto schedule = dynamic_schedule();
+    auto schedule = dynamic_schedule(spec);
     std::cout
-        << "scenario,seed,event_id,disk_id,state,start_window,end_window,"
+        << "scenario,num_disks,seed,event_id,disk_id,state,start_window,end_window,"
         << "start_read,end_read,is_migration_positive,notes\n";
     for (const auto& e : schedule) {
         std::cout << runtime.scenario << ','
+                  << spec.num_disks << ','
                   << runtime.seed << ','
                   << e.event_id << ','
                   << e.disk_id << ','
@@ -1697,7 +1873,8 @@ int main(int argc, char** argv) {
     std::filesystem::remove_all(TMP);
     std::filesystem::create_directories(TMP);
 
-    const Layout layout = build_layout(runtime.num_stripes);
+    const ScenarioSpec spec = scenario_spec_for_name(runtime.scenario);
+    const Layout layout = build_layout(runtime.num_stripes, spec);
 
     if (is_dynamic_scenario(runtime)) {
         const LatentWorld world = build_dynamic_world(runtime, layout);
