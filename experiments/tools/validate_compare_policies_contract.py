@@ -121,6 +121,40 @@ T3_SCHEDULE = [
 ]
 
 
+def make_t3_stress_schedule():
+    schedule = []
+    event_id = 0
+    group_a_events = [
+        ("healthy", 0, 3, "warmup_before_first_onset"),
+        ("mild_slow", 3, 6, "first_gradual_degradation"),
+        ("severe_slow", 6, 9, "sustained_severe_period"),
+        ("recovery", 9, 11, "partial_recovery"),
+        ("healthy", 11, 14, "recovered_interval"),
+        ("mild_slow", 14, 15, "relapse"),
+        ("recovery", 15, 16, "relapse_recovery"),
+        ("healthy", 16, 20, "post_recovery_observation"),
+    ]
+    group_b_events = [
+        ("healthy", 0, 9, "staggered_later_onset"),
+        ("mild_slow", 9, 11, "second_disk_mild_period"),
+        ("severe_slow", 11, 14, "second_disk_severe_period"),
+        ("recovery", 14, 16, "second_disk_recovery"),
+        ("healthy", 16, 20, "second_disk_post_recovery"),
+    ]
+    for disk in range(80, 90):
+        for state, start, end, notes in group_a_events:
+            schedule.append((event_id, disk, state, start, end, notes))
+            event_id += 1
+    for disk in range(90, 100):
+        for state, start, end, notes in group_b_events:
+            schedule.append((event_id, disk, state, start, end, notes))
+            event_id += 1
+    return schedule
+
+
+T3_STRESS_SCHEDULE = make_t3_stress_schedule()
+
+
 def fail(message):
     raise SystemExit(f"ERROR: {message}")
 
@@ -437,6 +471,132 @@ def check_t3_event_trace_contract(runner):
                 fail(f"unexpected T3 event trace {field}: expected {value}, got {row[field]}")
 
 
+def check_t3_stress_lightweight(runner):
+    scenario = "dynamic_stress_100d_20pct_hdd"
+    result = run([
+        runner,
+        "--scenario",
+        scenario,
+        "--num-reads",
+        "20000",
+        "--num-stripes",
+        "5000",
+        "--policy",
+        "all",
+        "--format",
+        "csv",
+        "--extended-metrics",
+    ])
+    rows = csv_rows(result.stdout, EXTENDED_DYNAMIC_HEADER)
+    if len(rows) != len(POLICIES):
+        fail(f"expected 4 T3.2 aggregate rows, got {len(rows)}")
+    order = [row["policy"] for row in rows]
+    if order != POLICIES:
+        fail(f"unexpected T3.2 policy order: {order}")
+    for row in rows:
+        if row["scenario"] != scenario:
+            fail(f"unexpected T3.2 scenario: {row}")
+        if int(row["num_disks"]) != 100:
+            fail(f"unexpected T3.2 num_disks: {row}")
+        if int(row["num_reads"]) != 20000:
+            fail(f"unexpected T3.2 num_reads: {row}")
+        if int(row["num_stripes"]) != 5000:
+            fail(f"unexpected T3.2 num_stripes: {row}")
+        if int(row["num_windows"]) != 20 or int(row["window_size"]) != 1000:
+            fail(f"unexpected T3.2 window shape: {row}")
+        check_numeric_fields(row, [
+            "p50_ms",
+            "p95_ms",
+            "p99_ms",
+            "post_warmup_windowed_p99_ms",
+            "severe_window_p99_ms",
+            "bandwidth_overhead_pct",
+        ])
+
+    result = run([
+        runner,
+        "--scenario",
+        scenario,
+        "--num-reads",
+        "20000",
+        "--num-stripes",
+        "5000",
+        "--policy",
+        "all",
+        "--format",
+        "windowed_csv",
+    ])
+    rows = csv_rows(result.stdout, WINDOWED_HEADER)
+    if len(rows) != len(POLICIES) * 20:
+        fail(f"expected 80 T3.2 windowed rows, got {len(rows)}")
+    policy_order = []
+    for row in rows:
+        if not policy_order or policy_order[-1] != row["policy"]:
+            policy_order.append(row["policy"])
+    if policy_order != POLICIES:
+        fail(f"unexpected T3.2 windowed policy order: {policy_order}")
+    for row in rows:
+        window_id = int(row["window_id"])
+        if row["scenario"] != scenario:
+            fail(f"unexpected T3.2 windowed scenario: {row}")
+        if int(row["num_disks"]) != 100:
+            fail(f"unexpected T3.2 windowed num_disks: {row}")
+        if int(row["slow_disk_a_id"]) != 80 or int(row["slow_disk_b_id"]) != 90:
+            fail(f"unexpected T3.2 slow disk representatives: {row}")
+        if row["slow_disk_a_state"] != state_for_disk_window(T3_STRESS_SCHEDULE, 80, window_id):
+            fail(f"unexpected T3.2 slow_disk_a_state: {row}")
+        if row["slow_disk_b_state"] != state_for_disk_window(T3_STRESS_SCHEDULE, 90, window_id):
+            fail(f"unexpected T3.2 slow_disk_b_state: {row}")
+        if int(row["active_slow_disks"]) != active_slow_disks(T3_STRESS_SCHEDULE, window_id):
+            fail(f"unexpected T3.2 active_slow_disks: {row}")
+
+
+def check_t3_stress_event_trace_contract(runner):
+    scenario = "dynamic_stress_100d_20pct_hdd"
+    result = run([
+        runner,
+        "--scenario",
+        scenario,
+        "--seed",
+        "42",
+        "--num-reads",
+        "1000000",
+        "--num-stripes",
+        "5000",
+        "--format",
+        "event_trace",
+    ])
+    rows = csv_rows(result.stdout, EVENT_TRACE_HEADER)
+    if len(rows) != len(T3_STRESS_SCHEDULE):
+        fail(f"expected 130 T3.2 event trace rows, got {len(rows)}")
+    if {int(row["disk_id"]) for row in rows} != set(range(80, 100)):
+        fail("unexpected T3.2 event trace disk set")
+    window_size = 50000
+    for row, expected in zip(rows, T3_STRESS_SCHEDULE):
+        event_id, disk_id, state, start_window, end_window, notes = expected
+        expected_positive = 1 if state in ("mild_slow", "severe_slow") else 0
+        expected_values = {
+            "scenario": scenario,
+            "num_disks": "100",
+            "seed": "42",
+            "event_id": str(event_id),
+            "disk_id": str(disk_id),
+            "state": state,
+            "start_window": str(start_window),
+            "end_window": str(end_window),
+            "start_read": str(start_window * window_size),
+            "end_read": str(end_window * window_size),
+            "is_migration_positive": str(expected_positive),
+            "notes": notes,
+        }
+        for field, value in expected_values.items():
+            if row[field] != value:
+                fail(
+                    f"unexpected T3.2 event trace {field}: "
+                    f"expected {value}, got {row[field]}"
+                )
+
+
 def check_negative_commands(runner):
     run(
         [
@@ -541,6 +701,8 @@ def main():
     check_event_trace(runner)
     check_t3_lightweight(runner)
     check_t3_event_trace_contract(runner)
+    check_t3_stress_lightweight(runner)
+    check_t3_stress_event_trace_contract(runner)
     check_negative_commands(runner)
 
 

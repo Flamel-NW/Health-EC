@@ -50,6 +50,8 @@ static constexpr int DEFAULT_SLOW_DISK_A = 8;
 static constexpr int DEFAULT_SLOW_DISK_B = 9;
 static constexpr int REALISTIC_SLOW_DISK_A = 98;
 static constexpr int REALISTIC_SLOW_DISK_B = 99;
+static constexpr int STRESS100_SLOW_DISK_A = 80;
+static constexpr int STRESS100_SLOW_DISK_B = 90;
 
 static constexpr int DYNAMIC_NUM_WINDOWS        = 20;
 static constexpr int FIRST_DYNAMIC_ONSET_WINDOW = 3;
@@ -76,9 +78,19 @@ struct ScenarioSpec {
     int num_disks;
     DiskId slow_disk_a;
     DiskId slow_disk_b;
+    std::vector<DiskId> slow_disks;
+    std::vector<DiskId> slow_disk_group_a;
+    std::vector<DiskId> slow_disk_group_b;
     bool stripe0_special_case;
     bool precompute_all_disk_latencies;
 };
+
+static std::vector<DiskId> disk_range(DiskId first, DiskId last_inclusive) {
+    std::vector<DiskId> out;
+    for (DiskId d = first; d <= last_inclusive; ++d)
+        out.push_back(d);
+    return out;
+}
 
 static ScenarioSpec scenario_spec_for_name(const std::string& scenario) {
     if (scenario == "canonical_stress20") {
@@ -88,6 +100,9 @@ static ScenarioSpec scenario_spec_for_name(const std::string& scenario) {
             DEFAULT_NUM_DISKS,
             DEFAULT_SLOW_DISK_A,
             DEFAULT_SLOW_DISK_B,
+            {DEFAULT_SLOW_DISK_A, DEFAULT_SLOW_DISK_B},
+            {DEFAULT_SLOW_DISK_A},
+            {DEFAULT_SLOW_DISK_B},
             true,
             false,
         };
@@ -99,6 +114,9 @@ static ScenarioSpec scenario_spec_for_name(const std::string& scenario) {
             DEFAULT_NUM_DISKS,
             DEFAULT_SLOW_DISK_A,
             DEFAULT_SLOW_DISK_B,
+            {DEFAULT_SLOW_DISK_A, DEFAULT_SLOW_DISK_B},
+            {DEFAULT_SLOW_DISK_A},
+            {DEFAULT_SLOW_DISK_B},
             true,
             true,
         };
@@ -110,6 +128,27 @@ static ScenarioSpec scenario_spec_for_name(const std::string& scenario) {
             REALISTIC_NUM_DISKS,
             REALISTIC_SLOW_DISK_A,
             REALISTIC_SLOW_DISK_B,
+            {REALISTIC_SLOW_DISK_A, REALISTIC_SLOW_DISK_B},
+            {REALISTIC_SLOW_DISK_A},
+            {REALISTIC_SLOW_DISK_B},
+            false,
+            false,
+        };
+    }
+    if (scenario == "dynamic_stress_100d_20pct_hdd") {
+        std::vector<DiskId> group_a = disk_range(80, 89);
+        std::vector<DiskId> group_b = disk_range(90, 99);
+        std::vector<DiskId> all = group_a;
+        all.insert(all.end(), group_b.begin(), group_b.end());
+        return {
+            "dynamic_stress_100d_20pct_hdd",
+            true,
+            REALISTIC_NUM_DISKS,
+            STRESS100_SLOW_DISK_A,
+            STRESS100_SLOW_DISK_B,
+            all,
+            group_a,
+            group_b,
             false,
             false,
         };
@@ -120,7 +159,8 @@ static ScenarioSpec scenario_spec_for_name(const std::string& scenario) {
 static bool is_valid_scenario_name(const std::string& scenario) {
     return scenario == "canonical_stress20" ||
            scenario == "dynamic_degradation" ||
-           scenario == "dynamic_realistic_100d_2pct_hdd";
+           scenario == "dynamic_realistic_100d_2pct_hdd" ||
+           scenario == "dynamic_stress_100d_20pct_hdd";
 }
 
 // Helpers.
@@ -153,8 +193,10 @@ static ScoreParams locked_health_ec_params() {
 }
 
 static void configure_slow_disks(DiskSimulator& sim, const ScenarioSpec& spec) {
-    sim.set_profile(spec.slow_disk_a, PROFILE_MILD);
-    sim.set_profile(spec.slow_disk_b, PROFILE_SEVERE);
+    for (DiskId disk : spec.slow_disk_group_a)
+        sim.set_profile(disk, PROFILE_MILD);
+    for (DiskId disk : spec.slow_disk_group_b)
+        sim.set_profile(disk, PROFILE_SEVERE);
 }
 
 static WorkloadGenerator make_workload(int num_stripes, double zipf_s, uint64_t seed) {
@@ -177,6 +219,10 @@ struct Layout {
 
 static Layout build_layout(int num_stripes, const ScenarioSpec& spec) {
     Layout L;
+    std::unordered_map<DiskId, bool> slow_disk_lookup;
+    for (DiskId disk : spec.slow_disks)
+        slow_disk_lookup[disk] = true;
+
     for (int s = 0; s < num_stripes; ++s) {
         StripeLayout sl;
         const int disk_map_s0[] = {
@@ -197,7 +243,7 @@ static Layout build_layout(int num_stripes, const ScenarioSpec& spec) {
         (void)sid;
         for (ShardId sh : sl.data_shards) {
             DiskId dk = sl.disk_of.at(sh);
-            if (dk == spec.slow_disk_a || dk == spec.slow_disk_b)
+            if (slow_disk_lookup.count(dk))
                 L.is_slow[sh] = true;
         }
     }
@@ -782,21 +828,31 @@ static DiskProfile profile_for_state(DiskState state) {
 }
 
 static std::vector<ScheduleEvent> dynamic_schedule(const ScenarioSpec& spec) {
-    return {
-        {0, spec.slow_disk_a, DiskState::Healthy,    0,  3, "warmup_before_first_onset"},
-        {1, spec.slow_disk_a, DiskState::MildSlow,   3,  6, "first_gradual_degradation"},
-        {2, spec.slow_disk_a, DiskState::SevereSlow, 6,  9, "sustained_severe_period"},
-        {3, spec.slow_disk_a, DiskState::Recovery,   9, 11, "partial_recovery"},
-        {4, spec.slow_disk_a, DiskState::Healthy,   11, 14, "recovered_interval"},
-        {5, spec.slow_disk_a, DiskState::MildSlow,  14, 15, "relapse"},
-        {6, spec.slow_disk_a, DiskState::Recovery,  15, 16, "relapse_recovery"},
-        {7, spec.slow_disk_a, DiskState::Healthy,   16, 20, "post_recovery_observation"},
-        {8, spec.slow_disk_b, DiskState::Healthy,    0,  9, "staggered_later_onset"},
-        {9, spec.slow_disk_b, DiskState::MildSlow,   9, 11, "second_disk_mild_period"},
-        {10, spec.slow_disk_b, DiskState::SevereSlow, 11, 14, "second_disk_severe_period"},
-        {11, spec.slow_disk_b, DiskState::Recovery,  14, 16, "second_disk_recovery"},
-        {12, spec.slow_disk_b, DiskState::Healthy,   16, 20, "second_disk_post_recovery"},
+    std::vector<ScheduleEvent> schedule;
+    int event_id = 0;
+    auto add_group_a = [&](DiskId disk) {
+        schedule.push_back({event_id++, disk, DiskState::Healthy,    0,  3, "warmup_before_first_onset"});
+        schedule.push_back({event_id++, disk, DiskState::MildSlow,   3,  6, "first_gradual_degradation"});
+        schedule.push_back({event_id++, disk, DiskState::SevereSlow, 6,  9, "sustained_severe_period"});
+        schedule.push_back({event_id++, disk, DiskState::Recovery,   9, 11, "partial_recovery"});
+        schedule.push_back({event_id++, disk, DiskState::Healthy,   11, 14, "recovered_interval"});
+        schedule.push_back({event_id++, disk, DiskState::MildSlow,  14, 15, "relapse"});
+        schedule.push_back({event_id++, disk, DiskState::Recovery,  15, 16, "relapse_recovery"});
+        schedule.push_back({event_id++, disk, DiskState::Healthy,   16, 20, "post_recovery_observation"});
     };
+    auto add_group_b = [&](DiskId disk) {
+        schedule.push_back({event_id++, disk, DiskState::Healthy,    0,  9, "staggered_later_onset"});
+        schedule.push_back({event_id++, disk, DiskState::MildSlow,   9, 11, "second_disk_mild_period"});
+        schedule.push_back({event_id++, disk, DiskState::SevereSlow, 11, 14, "second_disk_severe_period"});
+        schedule.push_back({event_id++, disk, DiskState::Recovery,  14, 16, "second_disk_recovery"});
+        schedule.push_back({event_id++, disk, DiskState::Healthy,   16, 20, "second_disk_post_recovery"});
+    };
+
+    for (DiskId disk : spec.slow_disk_group_a)
+        add_group_a(disk);
+    for (DiskId disk : spec.slow_disk_group_b)
+        add_group_b(disk);
+    return schedule;
 }
 
 static const ScheduleEvent* event_for_disk_window(
