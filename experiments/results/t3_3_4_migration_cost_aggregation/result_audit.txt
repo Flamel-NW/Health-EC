@@ -1,0 +1,23 @@
+T3.3.4 migration cost aggregation audit
+STATUS=PASS
+input_policy=only T3.3.2 cost artifacts plus T3.3.3 audit
+source_boundary=2pct realistic smoke-only; 20pct stress formal
+stripe_level_policy=exact per-migration trace from T3.3.2
+
+paper_table_rows:
+dynamic_realistic_100d_2pct_hdd: source=smoke-only, seeds=42, health_ec_bytes=16384, stripe_level_bytes=49152, full_disk_bytes=2457600, ratio=0.006667, full_disk_multiplier=150, stripe_ratio=0.02, migration_tp_fp_fn=4/0/585
+dynamic_stress_100d_20pct_hdd: source=formal, seeds=42..71, health_ec_bytes=86016, stripe_level_bytes=147456, full_disk_bytes=24576000, ratio=0.0035, full_disk_multiplier=285.714286, stripe_ratio=0.006, migration_tp_fp_fn=624/0/175536
+
+key_findings:
+realistic_smoke_seed42: Health-EC moves 16384 bytes vs full-disk 2457600 bytes (150x full-disk multiplier).
+stress_formal_median: Health-EC moves 86016 bytes vs full-disk 24576000 bytes (285.714286x full-disk multiplier).
+stress_formal_stripe_level_median: stripe-level baseline moves 147456 bytes (0.006 of full-disk cost).
+
+reporting_boundary:
+- 2pct realistic is smoke-only because no T3.1 formal matrix exists yet.
+- 20pct stress is formal because it uses T3.2.3 formal seeds 42..71.
+- Cost metrics measure migration I/O only; they do not replace latency, bandwidth, read-bypass coverage, or precision/recall.
+- Read-bypass coverage is not migration recall.
+- Health-EC cost is counted from migration triggers, not migration recall.
+- Observed migration FP=0 is an observation, not a universal guarantee.
+- Migration trace source_disk is policy-local after prior migrations, not necessarily initial modulo placement.

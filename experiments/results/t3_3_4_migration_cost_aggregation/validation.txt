@@ -1,0 +1,24 @@
+STATUS=PASS
+task=T3.3.4
+input_validation=T3.3.2 STATUS=PASS
+input_audit=T3.3.3 PASS_TO_T3_3_4
+cost_rows=31
+summary_rows=2
+paper_table_rows=2
+realistic_source=smoke-only
+realistic_rows=1
+realistic_seed=42
+stress_source=formal
+stress_rows=30
+stress_seeds=42..71
+schema=PASS
+cost_ordering=PASS
+full_disk_sanity_values=PASS
+stripe_level_exact_trace_source=PASS
+realistic_health_ec_bytes=16384
+stress_health_ec_bytes_median=86016
+stress_full_disk_multiplier_median=285.714286
+summary_csv=/root/workspace/Health-EC-workspace/Health-EC/experiments/results/t3_3_4_migration_cost_aggregation/migration_cost_summary_by_scenario.csv
+paper_table=/root/workspace/Health-EC-workspace/Health-EC/experiments/results/t3_3_4_migration_cost_aggregation/paper_table_migration_cost.csv
+result_audit=/root/workspace/Health-EC-workspace/Health-EC/experiments/results/t3_3_4_migration_cost_aggregation/result_audit.txt
+aggregation_provenance=/root/workspace/Health-EC-workspace/Health-EC/experiments/results/t3_3_4_migration_cost_aggregation/aggregation_provenance.txt
