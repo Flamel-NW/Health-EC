@@ -1,0 +1,3 @@
+scenario,source_boundary,seeds,health_ec_bytes,stripe_level_bytes,full_disk_bytes,health_ec_vs_full_disk_ratio,full_disk_vs_health_ec_multiplier,stripe_level_vs_full_disk_ratio,migration_tp_fp_fn,reporting_note
+dynamic_realistic_100d_2pct_hdd,smoke-only,42,16384,49152,2457600,0.006667,150,0.02,4/0/585,smoke-only single seed; not a formal 2pct table
+dynamic_stress_100d_20pct_hdd,formal,42..71,86016,147456,24576000,0.0035,285.714286,0.006,624/0/175536,formal seeds 42..71 from T3.2.3 stress matrix
