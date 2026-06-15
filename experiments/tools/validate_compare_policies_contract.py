@@ -99,6 +99,26 @@ EVENT_TRACE_HEADER = [
     "notes",
 ]
 
+MIGRATION_TRACE_HEADER = [
+    "scenario",
+    "num_disks",
+    "seed",
+    "num_reads",
+    "num_stripes",
+    "zipf_s",
+    "policy",
+    "timeout_ms",
+    "read_index",
+    "window_id",
+    "stripe_id",
+    "shard_id",
+    "source_disk",
+    "target_disk",
+    "is_migration_positive",
+    "event_id",
+    "disk_state",
+]
+
 T2_SCHEDULE = [
     (0, 8, "healthy", 0, 3, "warmup_before_first_onset"),
     (1, 8, "mild_slow", 3, 6, "first_gradual_degradation"),
@@ -191,6 +211,13 @@ def csv_rows(text, expected_header):
     if not rows:
         fail("missing CSV rows")
     return rows
+
+
+def csv_rows_allow_empty(text, expected_header):
+    reader = csv.DictReader(text.splitlines())
+    if reader.fieldnames != expected_header:
+        fail(f"unexpected header: {reader.fieldnames}")
+    return list(reader)
 
 
 def state_for_disk_window(schedule, disk_id, window_id):
@@ -597,6 +624,44 @@ def check_t3_stress_event_trace_contract(runner):
                 )
 
 
+def check_migration_trace_contract(runner):
+    result = run([
+        runner,
+        "--scenario",
+        "dynamic_degradation",
+        "--num-reads",
+        "20000",
+        "--policy",
+        "health_ec",
+        "--format",
+        "migration_trace",
+    ])
+    rows = csv_rows_allow_empty(result.stdout, MIGRATION_TRACE_HEADER)
+    for row in rows:
+        if row["scenario"] != "dynamic_degradation":
+            fail(f"unexpected migration trace scenario: {row}")
+        if row["policy"] != "health_ec":
+            fail(f"unexpected migration trace policy: {row}")
+        if row["disk_state"] not in ("healthy", "mild_slow", "severe_slow", "recovery"):
+            fail(f"unexpected migration trace disk_state: {row}")
+        check_numeric_fields(row, [
+            "num_disks",
+            "seed",
+            "num_reads",
+            "num_stripes",
+            "zipf_s",
+            "timeout_ms",
+            "read_index",
+            "window_id",
+            "stripe_id",
+            "shard_id",
+            "source_disk",
+            "target_disk",
+            "is_migration_positive",
+            "event_id",
+        ])
+
+
 def check_negative_commands(runner):
     run(
         [
@@ -689,6 +754,49 @@ def check_negative_commands(runner):
         expect_success=False,
         expected_stderr="require a dynamic scenario",
     )
+    run(
+        [
+            runner,
+            "--scenario",
+            "canonical_stress20",
+            "--policy",
+            "health_ec",
+            "--format",
+            "migration_trace",
+        ],
+        expect_success=False,
+        expected_stderr="require a dynamic scenario",
+    )
+    run(
+        [
+            runner,
+            "--scenario",
+            "dynamic_degradation",
+            "--num-reads",
+            "20000",
+            "--policy",
+            "all",
+            "--format",
+            "migration_trace",
+        ],
+        expect_success=False,
+        expected_stderr="migration_trace requires --policy health_ec",
+    )
+    run(
+        [
+            runner,
+            "--scenario",
+            "dynamic_degradation",
+            "--num-reads",
+            "20000",
+            "--policy",
+            "timeout_degraded_read",
+            "--format",
+            "migration_trace",
+        ],
+        expect_success=False,
+        expected_stderr="migration_trace requires --policy health_ec",
+    )
 
 
 def main():
@@ -703,6 +811,7 @@ def main():
     check_t3_event_trace_contract(runner)
     check_t3_stress_lightweight(runner)
     check_t3_stress_event_trace_contract(runner)
+    check_migration_trace_contract(runner)
     check_negative_commands(runner)
 
 

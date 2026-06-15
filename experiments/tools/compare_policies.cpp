@@ -269,6 +269,7 @@ enum class OutputFormat {
     Csv,
     WindowedCsv,
     EventTrace,
+    MigrationTrace,
 };
 
 struct RuntimeConfig {
@@ -425,6 +426,8 @@ static RuntimeConfig parse_args(int argc, char** argv) {
                 cfg.format = OutputFormat::WindowedCsv;
             } else if (value == "event_trace") {
                 cfg.format = OutputFormat::EventTrace;
+            } else if (value == "migration_trace") {
+                cfg.format = OutputFormat::MigrationTrace;
             } else {
                 throw std::invalid_argument("invalid --format: " + value);
             }
@@ -449,9 +452,10 @@ static void apply_runtime_defaults(RuntimeConfig& cfg) {
 static void validate_runtime_config(const RuntimeConfig& cfg) {
     if (!is_dynamic_scenario(cfg) &&
         (cfg.format == OutputFormat::WindowedCsv ||
-         cfg.format == OutputFormat::EventTrace)) {
+         cfg.format == OutputFormat::EventTrace ||
+         cfg.format == OutputFormat::MigrationTrace)) {
         throw std::invalid_argument(
-            "windowed_csv and event_trace require a dynamic scenario");
+            "windowed_csv, event_trace, and migration_trace require a dynamic scenario");
     }
     if (is_dynamic_scenario(cfg) && cfg.num_reads % DYNAMIC_NUM_WINDOWS != 0) {
         throw std::invalid_argument(
@@ -461,6 +465,12 @@ static void validate_runtime_config(const RuntimeConfig& cfg) {
         (!is_dynamic_scenario(cfg) || cfg.format != OutputFormat::Csv)) {
         throw std::invalid_argument(
             "extended metrics require a dynamic scenario with --format csv");
+    }
+    if (cfg.format == OutputFormat::MigrationTrace &&
+        (cfg.policy_selection != PolicySelection::Single ||
+         cfg.single_policy != PolicyKind::HealthEC)) {
+        throw std::invalid_argument(
+            "migration_trace requires --policy health_ec");
     }
 }
 
@@ -773,6 +783,18 @@ struct DynamicWindowResult {
     std::vector<double> latencies;
 };
 
+struct MigrationTraceRow {
+    int read_index = 0;
+    int window_id = 0;
+    StripeId stripe_id = 0;
+    ShardId shard_id = 0;
+    DiskId source_disk = 0;
+    DiskId target_disk = 0;
+    bool is_migration_positive = false;
+    int event_id = -1;
+    DiskState disk_state = DiskState::Healthy;
+};
+
 struct DynamicRunResult {
     RunResult aggregate;
     std::vector<double> aggregate_latencies;
@@ -790,6 +812,7 @@ struct DynamicRunResult {
     long recovery_regret_reads = 0;
     long read_bypass_eligible_events = NOT_APPLICABLE;
     long read_bypass_triggered_events = NOT_APPLICABLE;
+    std::vector<MigrationTraceRow> migration_trace;
 };
 
 struct EventShardStats {
@@ -1321,6 +1344,7 @@ static void record_migration_trigger(
     const LatentRequest& req,
     const LatentShard& shard,
     DiskId current_disk,
+    DiskId target_disk,
     std::unordered_map<int, std::unordered_map<ShardId, EventShardStats>>& event_stats)
 {
     result.aggregate.migration_triggers++;
@@ -1330,6 +1354,17 @@ static void record_migration_trigger(
         world.schedule, current_disk, req.window_id);
     DiskState state = e ? e->state : DiskState::Healthy;
     int event_key = e ? e->event_id : (-1000 - current_disk);
+    result.migration_trace.push_back({
+        .read_index = req.read_index,
+        .window_id = req.window_id,
+        .stripe_id = req.stripe_id,
+        .shard_id = shard.shard,
+        .source_disk = current_disk,
+        .target_disk = target_disk,
+        .is_migration_positive = is_migration_positive(state),
+        .event_id = event_key,
+        .disk_state = state,
+    });
     auto& stats = event_stats[event_key][shard.shard];
 
     if (!stats.trigger_recorded) {
@@ -1643,7 +1678,8 @@ static DynamicRunResult run_dynamic_policy(const LatentWorld& world,
                     if (target == -1)
                         continue;
                     record_migration_trigger(
-                        result, world, req, *data_shard, current_disk, event_stats);
+                        result, world, req, *data_shard, current_disk, target,
+                        event_stats);
                     logical_disk[sh] = target;
                 }
                 st.S = 0.0;
@@ -1904,6 +1940,40 @@ static void print_event_trace(const RuntimeConfig& runtime)
     }
 }
 
+static void print_migration_trace_header()
+{
+    std::cout
+        << "scenario,num_disks,seed,num_reads,num_stripes,zipf_s,policy,timeout_ms,"
+        << "read_index,window_id,stripe_id,shard_id,source_disk,target_disk,"
+        << "is_migration_positive,event_id,disk_state\n";
+}
+
+static void print_migration_trace_rows(const RuntimeConfig& runtime,
+                                       const LatentWorld& world,
+                                       const DynamicRunResult& result)
+{
+    std::cout << std::fixed << std::setprecision(1);
+    for (const auto& row : result.migration_trace) {
+        std::cout << runtime.scenario << ','
+                  << world.num_disks << ','
+                  << runtime.seed << ','
+                  << runtime.num_reads << ','
+                  << runtime.num_stripes << ','
+                  << runtime.zipf_s << ','
+                  << policy_name(PolicyKind::HealthEC) << ','
+                  << runtime.timeout_ms << ','
+                  << row.read_index << ','
+                  << row.window_id << ','
+                  << row.stripe_id << ','
+                  << row.shard_id << ','
+                  << row.source_disk << ','
+                  << row.target_disk << ','
+                  << (row.is_migration_positive ? 1 : 0) << ','
+                  << row.event_id << ','
+                  << disk_state_name(row.disk_state) << "\n";
+    }
+}
+
 // main.
 
 int main(int argc, char** argv) {
@@ -1966,6 +2036,9 @@ int main(int argc, char** argv) {
             print_windowed_csv_header();
             for (std::size_t i = 0; i < configs.size(); ++i)
                 print_windowed_csv_rows(runtime, world, configs[i].kind, results[i]);
+        } else if (runtime.format == OutputFormat::MigrationTrace) {
+            print_migration_trace_header();
+            print_migration_trace_rows(runtime, world, results.front());
         }
 
         std::filesystem::remove_all(TMP);
