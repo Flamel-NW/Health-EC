@@ -1,0 +1,63 @@
+T3.2.3 100d 20pct stress formal matrix preflight
+
+$ git status --short --branch
+returncode=0
+--- stdout ---
+## dev...origin/dev
+?? experiments/results/t3_2_3_100d_20pct_stress_formal_matrix/
+
+$ git rev-parse HEAD
+returncode=0
+--- stdout ---
+9d0b6fd3db6326e185c39726057d3a62c9d1b73c
+
+$ git status --short --branch
+returncode=0
+--- stdout ---
+## master...origin/master
+ M scripts/aggregate_policy_results.py
+ M scripts/run_policy_matrix.py
+?? scripts/__pycache__/
+
+$ git rev-parse HEAD
+returncode=0
+--- stdout ---
+8b0ee7fc518bd9a06a18ca0cfde810196d3082f3
+
+$ cat /proc/loadavg
+returncode=0
+--- stdout ---
+0.39 0.28 0.12 1/474 22
+
+$ free -h
+returncode=0
+--- stdout ---
+               total        used        free      shared  buff/cache   available
+Mem:            31Gi       2.3Gi        28Gi       1.1Mi       1.4Gi        29Gi
+Swap:             0B          0B          0B
+
+$ df -h /
+returncode=0
+--- stdout ---
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/root        48G   35G   14G  73% /
+
+$ vmstat 1 5
+returncode=0
+--- stdout ---
+procs -----------memory---------- ---swap-- -----io---- -system-- -------cpu-------
+ r  b   swpd   free   buff  cache   si   so    bi    bo   in   cs us sy id wa st gu
+ 0  0      0 29435440 178560 1337812    0    0   136   241  956    1  0  0 100  0  0  0
+ 0  0      0 29435256 178560 1337984    0    0     0     0 1096 1112  1  0 99  0  0  0
+ 0  0      0 29435256 178560 1337984    0    0     0     0  793  903  0  0 100  0  0  0
+ 0  0      0 29435256 178560 1337984    0    0     0     0  834  937  0  0 100  0  0  0
+ 0  0      0 29435256 178560 1337984    0    0     0     0  893  975  0  0 100  0  0  0
+
+$ ps -eo pid,ppid,pcpu,pmem,comm,args --sort=-pcpu
+returncode=0
+--- stdout ---
+    PID    PPID %CPU %MEM COMMAND         COMMAND
+      2       1  0.9  0.0 python3         python3 scripts/run_policy_matrix.py
+      1       0  0.0  0.0 bwrap           bwrap --new-session --die-with-parent --ro-bind / / --dev /dev --bind /tmp /tmp --perms 555 --tmpfs /tmp/.git --remount-ro /tmp/.git --perms 555 --tmpfs /tmp/.agents --remount-ro /tmp/.agents --perms 555 --tmpfs /tmp/.codex --remount-ro /tmp/.codex --bind /root/workspace/Health-EC-workspace /root/workspace/Health-EC-workspace --perms 555 --tmpfs /root/workspace/Health-EC-workspace/.git --remount-ro /root/workspace/Health-EC-workspace/.git --perms 555 --tmpfs /root/workspace/Health-EC-workspace/.agents --remount-ro /root/workspace/Health-EC-workspace/.agents --perms 555 --tmpfs /root/workspace/Health-EC-workspace/.codex --remount-ro /root/workspace/Health-EC-workspace/.codex --unshare-user --unshare-pid --proc /proc --argv0 codex-linux-sandbox -- /root/.codex/packages/standalone/releases/0.139.0-x86_64-unknown-linux-musl/bin/codex --sandbox-policy-cwd /root/workspace/Health-EC-workspace --command-cwd /root/workspace/Health-EC-workspace/Health-EC-workflow --permission-profile {"type":"managed","file_system":{"type":"restricted","entries":[{"path":{"type":"special","value":{"kind":"root"}},"access":"read"},{"path":{"type":"path","path":"/root/workspace/Health-EC-workspace"},"access":"write"},{"path":{"type":"special","value":{"kind":"slash_tmp"}},"access":"write"},{"path":{"type":"special","value":{"kind":"tmpdir"}},"access":"write"},{"path":{"type":"path","path":"/root/workspace/Health-EC-workspace"},"access":"write"},{"path":{"type":"path","path":"/root/workspace/Health-EC-workspace/.git"},"access":"read"},{"path":{"type":"path","path":"/root/workspace/Health-EC-workspace/.agents"},"access":"read"},{"path":{"type":"path","path":"/root/workspace/Health-EC-workspace/.codex"},"access":"read"},{"path":{"type":"path","path":"/root/workspace/Health-EC-workspace/.git"},"access":"read"},{"path":{"type":"path","path":"/root/workspace/Health-EC-workspace/.agents"},"access":"read"},{"path":{"type":"path","path":"/root/workspace/Health-EC-workspace/.codex"},"access":"read"}]},"network":"enabled"} --apply-seccomp-then-exec -- /bin/bash -lc python3 scripts/run_policy_matrix.py
+     26       2  0.0  0.0 ps              ps -eo pid,ppid,pcpu,pmem,comm,args --sort=-pcpu
+

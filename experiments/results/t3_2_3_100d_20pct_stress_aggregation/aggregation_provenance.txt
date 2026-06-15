@@ -1,0 +1,21 @@
+T3.2.3 100d 20pct stress aggregation provenance
+STATUS=PASS
+input_policy=only T3.2.3 white-listed formal raw artifacts
+excluded_inputs=T3.2.2 smoke,T2.8 validation,T2.6/T2.7 artifacts
+scenario=dynamic_stress_100d_20pct_hdd
+num_disks=100
+dynamic_num_reads=1000000
+dynamic_num_stripes=5000
+formal_seeds=42..71
+dynamic_timeout_default=15
+health_ec_defaults=theta_S=0.03,theta_D=12,A_abs=25,B_abs=15
+
+dynamic_matrix_raw,path=/root/workspace/Health-EC-workspace/Health-EC/experiments/results/t3_2_3_100d_20pct_stress_formal_matrix/dynamic_matrix_raw.csv,sha256=f2d69d6af60d4f06da7c7376e74b252bbab89b410214a17e878d0b398a27a182,size=24427,mtime_ns=1781538881113307688
+dynamic_windowed_raw,path=/root/workspace/Health-EC-workspace/Health-EC/experiments/results/t3_2_3_100d_20pct_stress_formal_matrix/dynamic_windowed_raw.csv,sha256=e0d12ee5946088ffcd4850acf74568ad5afc616b8908d4c606042c5f8716c26b,size=389962,mtime_ns=1781538881162616088
+event_trace_seed42,path=/root/workspace/Health-EC-workspace/Health-EC/experiments/results/t3_2_3_100d_20pct_stress_formal_matrix/event_trace_seed42.csv,sha256=f482785e3c2302fd14dc03da0d0cda859dd68ff69d29a78ba9091980c112aab3,size=12439,mtime_ns=1781538881017507354
+static_canonical_seed42,path=/root/workspace/Health-EC-workspace/Health-EC/experiments/results/t3_2_3_100d_20pct_stress_formal_matrix/static_canonical_seed42.csv,sha256=91d3979b7aad621ef4cb1e7d0a2cec64b02b7993411b243579351f34b7ffb6aa,size=660,mtime_ns=1781538881105029959
+t3_2_3_validation,path=/root/workspace/Health-EC-workspace/Health-EC/experiments/results/t3_2_3_100d_20pct_stress_formal_matrix/validation.txt,sha256=7443c7a0ea762cdaf51078ed89086ea549dceb54dc6146045f2ee4cc4c4b2f78,size=3080,mtime_ns=1781538881165308107
+t3_2_3_artifact_provenance,path=/root/workspace/Health-EC-workspace/Health-EC/experiments/results/t3_2_3_100d_20pct_stress_formal_matrix/artifact_provenance.txt,sha256=c4070b028e34b58140277a25a6fcfa0fefe2df68e05e162a1d54394401b39cba,size=3372,mtime_ns=1781538881164308099
+t2_8_2_5_selected,path=/root/workspace/Health-EC-workspace/Health-EC/experiments/results/t2_8_2_5_upper_a_expansion/selected_health_ec_params.txt,sha256=8e8d5ee91a8be5d2c197c0d402e77c0b5e463fdd95b4949b18a2b29026a811d7,size=2302,mtime_ns=1781375209328316621
+t2_8_2_5_validation,path=/root/workspace/Health-EC-workspace/Health-EC/experiments/results/t2_8_2_5_upper_a_expansion/validation.txt,sha256=6b93a7e1b7b3c542936aa6b56f1f3e93961b94beb96618e69831826518994c53,size=462,mtime_ns=1781375073823949225
+t3_2_2_validation_gate,path=/root/workspace/Health-EC-workspace/Health-EC/experiments/results/t3_2_2_100d_20pct_stress_smoke/validation.txt,sha256=29caef41ad74324aa52a9bb612c4e1540aab215f4a47cc8a72e7a9dc7e56a9fc,size=1528,mtime_ns=1781459776394525349
