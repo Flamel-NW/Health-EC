@@ -1,0 +1,42 @@
+T3.4.3 overlap smoke preflight
+
+$ git status --short --branch
+returncode=0
+--- stdout ---
+## dev...origin/dev
+?? experiments/results/t3_4_3_overlap_smoke/
+
+$ git status --short --branch
+returncode=0
+--- stdout ---
+## master...origin/master
+
+$ cat /proc/loadavg
+returncode=0
+--- stdout ---
+0.05 0.01 0.00 1/289 20
+
+$ free -h
+returncode=0
+--- stdout ---
+               total        used        free      shared  buff/cache   available
+Mem:            31Gi       980Mi        28Gi       1.1Mi       1.8Gi        30Gi
+Swap:             0B          0B          0B
+
+$ df -h /
+returncode=0
+--- stdout ---
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/root        48G   35G   13G  73% /
+
+$ vmstat 1 5
+returncode=0
+--- stdout ---
+procs -----------memory---------- ---swap-- -----io---- -system-- -------cpu-------
+ r  b   swpd   free   buff  cache   si   so    bi    bo   in   cs us sy id wa st gu
+ 0  0      0 30347948  92744 1821228    0    0    84  1010  952    1  0  0 99  0  0  0
+ 0  0      0 30348440  92744 1821252    0    0     0     0  524  455  0  0 100  0  0  0
+ 0  0      0 30350736  92744 1821252    0    0     0     0  458  447  0  0 100  0  0  0
+ 0  0      0 30352528  92744 1821252    0    0     0     0  454  446  0  0 100  0  0  0
+ 0  0      0 30354024  92744 1821252    0    0     0     0  418  410  0  0 100  0  0  0
+
