@@ -52,6 +52,8 @@ static constexpr int REALISTIC_SLOW_DISK_A = 98;
 static constexpr int REALISTIC_SLOW_DISK_B = 99;
 static constexpr int STRESS100_SLOW_DISK_A = 80;
 static constexpr int STRESS100_SLOW_DISK_B = 90;
+static constexpr int OVERLAP_SLOW_DISK_A = 96;
+static constexpr int OVERLAP_SLOW_DISK_B = 99;
 
 static constexpr int DYNAMIC_NUM_WINDOWS        = 20;
 static constexpr int FIRST_DYNAMIC_ONSET_WINDOW = 3;
@@ -153,6 +155,21 @@ static ScenarioSpec scenario_spec_for_name(const std::string& scenario) {
             false,
         };
     }
+    if (scenario == "dynamic_overlap_100d_4pct_hdd") {
+        std::vector<DiskId> all = disk_range(96, 99);
+        return {
+            "dynamic_overlap_100d_4pct_hdd",
+            true,
+            REALISTIC_NUM_DISKS,
+            OVERLAP_SLOW_DISK_A,
+            OVERLAP_SLOW_DISK_B,
+            all,
+            {},
+            {},
+            false,
+            false,
+        };
+    }
     throw std::invalid_argument("invalid --scenario: " + scenario);
 }
 
@@ -160,7 +177,8 @@ static bool is_valid_scenario_name(const std::string& scenario) {
     return scenario == "canonical_stress20" ||
            scenario == "dynamic_degradation" ||
            scenario == "dynamic_realistic_100d_2pct_hdd" ||
-           scenario == "dynamic_stress_100d_20pct_hdd";
+           scenario == "dynamic_stress_100d_20pct_hdd" ||
+           scenario == "dynamic_overlap_100d_4pct_hdd";
 }
 
 // Helpers.
@@ -853,6 +871,40 @@ static DiskProfile profile_for_state(DiskState state) {
 static std::vector<ScheduleEvent> dynamic_schedule(const ScenarioSpec& spec) {
     std::vector<ScheduleEvent> schedule;
     int event_id = 0;
+    auto add_event = [&](DiskId disk, DiskState state,
+                         int start_window, int end_window,
+                         const char* notes) {
+        schedule.push_back({
+            event_id++, disk, state, start_window, end_window, notes});
+    };
+
+    if (std::string(spec.name) == "dynamic_overlap_100d_4pct_hdd") {
+        add_event(96, DiskState::Healthy,    0,  3, "first_disk_warmup");
+        add_event(96, DiskState::MildSlow,   3,  6, "first_disk_gradual_degradation");
+        add_event(96, DiskState::SevereSlow, 6, 10, "first_disk_sustained_severe_period");
+        add_event(96, DiskState::Recovery,  10, 12, "first_disk_partial_recovery");
+        add_event(96, DiskState::Healthy,   12, 20, "first_disk_post_recovery_observation");
+
+        add_event(97, DiskState::Healthy,    0,  5, "second_disk_staggered_warmup");
+        add_event(97, DiskState::MildSlow,   5,  8, "second_disk_gradual_degradation");
+        add_event(97, DiskState::SevereSlow, 8, 12, "second_disk_sustained_severe_period");
+        add_event(97, DiskState::Recovery,  12, 14, "second_disk_partial_recovery");
+        add_event(97, DiskState::Healthy,   14, 20, "second_disk_post_recovery_observation");
+
+        add_event(98, DiskState::Healthy,    0,  8, "third_disk_late_warmup");
+        add_event(98, DiskState::MildSlow,   8, 11, "third_disk_gradual_degradation");
+        add_event(98, DiskState::SevereSlow, 11, 15, "third_disk_sustained_severe_period");
+        add_event(98, DiskState::Recovery,  15, 17, "third_disk_partial_recovery");
+        add_event(98, DiskState::Healthy,   17, 20, "third_disk_post_recovery_observation");
+
+        add_event(99, DiskState::Healthy,    0, 11, "fourth_disk_latest_warmup");
+        add_event(99, DiskState::MildSlow,   11, 14, "fourth_disk_gradual_degradation");
+        add_event(99, DiskState::SevereSlow, 14, 17, "fourth_disk_sustained_severe_period");
+        add_event(99, DiskState::Recovery,   17, 18, "fourth_disk_short_recovery");
+        add_event(99, DiskState::Healthy,    18, 20, "fourth_disk_post_recovery_observation");
+        return schedule;
+    }
+
     auto add_group_a = [&](DiskId disk) {
         schedule.push_back({event_id++, disk, DiskState::Healthy,    0,  3, "warmup_before_first_onset"});
         schedule.push_back({event_id++, disk, DiskState::MildSlow,   3,  6, "first_gradual_degradation"});
