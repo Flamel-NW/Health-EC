@@ -1,0 +1,60 @@
+T3.4.4 overlap formal matrix preflight
+
+$ git status --short --branch
+returncode=0
+--- stdout ---
+## dev...origin/dev
+?? experiments/results/t3_4_4_overlap_formal_matrix/
+
+$ git rev-parse HEAD
+returncode=0
+--- stdout ---
+0a2320830ec38900a27cb71e533d91c0bd6235ab
+
+$ git status --short --branch
+returncode=0
+--- stdout ---
+## master...origin/master
+
+$ git rev-parse HEAD
+returncode=0
+--- stdout ---
+d944c78c2edd3819babf49671ca728cc653d9c51
+
+$ cat /proc/loadavg
+returncode=0
+--- stdout ---
+0.05 0.09 0.03 2/367 22
+
+$ free -h
+returncode=0
+--- stdout ---
+               total        used        free      shared  buff/cache   available
+Mem:            31Gi       1.3Gi        29Gi       1.1Mi       910Mi        30Gi
+Swap:             0B          0B          0B
+
+$ df -h /
+returncode=0
+--- stdout ---
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/root        48G   36G   13G  75% /
+
+$ vmstat 1 5
+returncode=0
+--- stdout ---
+procs -----------memory---------- ---swap-- -----io---- -system-- -------cpu-------
+ r  b   swpd   free   buff  cache   si   so    bi    bo   in   cs us sy id wa st gu
+ 0  0      0 30944096  38860 893052    0    0  3211  1750 2554    3  1  1 98  0  0  0
+ 0  0      0 30943820  38860 893304    0    0    12    44  735  678  0  0 100  0  0  0
+ 0  0      0 30944004  38860 893304    0    0     0     0  510  465  0  0 100  0  0  0
+ 0  0      0 30944004  38860 893304    0    0     0     0  684  755  0  0 100  0  0  0
+ 0  0      0 30944004  38860 893304    0    0     0   924  493  468  0  0 100  0  0  0
+
+$ ps -eo pid,ppid,pcpu,pmem,comm,args --sort=-pcpu
+returncode=0
+--- stdout ---
+    PID    PPID %CPU %MEM COMMAND         COMMAND
+      2       1  0.9  0.0 python3         python3 scripts/run_policy_matrix.py
+      1       0  0.0  0.0 bwrap           bwrap --new-session --die-with-parent --ro-bind / / --dev /dev --bind /tmp /tmp --perms 555 --tmpfs /tmp/.git --remount-ro /tmp/.git --perms 555 --tmpfs /tmp/.agents --remount-ro /tmp/.agents --perms 555 --tmpfs /tmp/.codex --remount-ro /tmp/.codex --bind /root/workspace/Health-EC-workspace /root/workspace/Health-EC-workspace --perms 555 --tmpfs /root/workspace/Health-EC-workspace/.git --remount-ro /root/workspace/Health-EC-workspace/.git --perms 555 --tmpfs /root/workspace/Health-EC-workspace/.agents --remount-ro /root/workspace/Health-EC-workspace/.agents --perms 555 --tmpfs /root/workspace/Health-EC-workspace/.codex --remount-ro /root/workspace/Health-EC-workspace/.codex --unshare-user --unshare-pid --proc /proc --argv0 codex-linux-sandbox -- /root/.codex/packages/standalone/releases/0.141.0-x86_64-unknown-linux-musl/bin/codex --sandbox-policy-cwd /root/workspace/Health-EC-workspace --command-cwd /root/workspace/Health-EC-workspace/Health-EC-workflow --permission-profile {"type":"managed","file_system":{"type":"restricted","entries":[{"path":{"type":"special","value":{"kind":"root"}},"access":"read"},{"path":{"type":"path","path":"/root/workspace/Health-EC-workspace"},"access":"write"},{"path":{"type":"special","value":{"kind":"slash_tmp"}},"access":"write"},{"path":{"type":"special","value":{"kind":"tmpdir"}},"access":"write"},{"path":{"type":"path","path":"/root/workspace/Health-EC-workspace/.git"},"access":"read"},{"path":{"type":"path","path":"/root/workspace/Health-EC-workspace/.agents"},"access":"read"},{"path":{"type":"path","path":"/root/workspace/Health-EC-workspace/.codex"},"access":"read"}]},"network":"enabled"} --apply-seccomp-then-exec -- /bin/bash -lc python3 scripts/run_policy_matrix.py
+     26       2  0.0  0.0 ps              ps -eo pid,ppid,pcpu,pmem,comm,args --sort=-pcpu
+
