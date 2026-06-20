@@ -1,0 +1,22 @@
+T3.4.4 overlap aggregation provenance
+STATUS=PASS
+input_policy=only T3.4.4 white-listed formal raw artifacts
+excluded_inputs=T3.4.3 smoke,T2.8 validation,T2.6/T2.7 artifacts
+scenario=dynamic_overlap_100d_4pct_hdd
+num_disks=100
+dynamic_num_reads=1000000
+dynamic_num_stripes=5000
+formal_seeds=42..71
+dynamic_timeout_default=15
+health_ec_defaults=theta_S=0.03,theta_D=12,A_abs=25,B_abs=15
+
+dynamic_matrix_raw,path=/root/workspace/Health-EC-workspace/Health-EC/experiments/results/t3_4_4_overlap_formal_matrix/dynamic_matrix_raw.csv,sha256=ee78055ddcc449e9d21dfd4dee54793dda7a5ebb6ce50ee4c87071060359570e,size=24161,mtime_ns=1781962643196921600
+dynamic_windowed_raw,path=/root/workspace/Health-EC-workspace/Health-EC/experiments/results/t3_4_4_overlap_formal_matrix/dynamic_windowed_raw.csv,sha256=4c0afa3bc171288d2675aa65ac8053f71d688f5df27884b69b65bb23ecd36623,size=387732,mtime_ns=1781962643232921946
+event_trace_seed42,path=/root/workspace/Health-EC-workspace/Health-EC/experiments/results/t3_4_4_overlap_formal_matrix/event_trace_seed42.csv,sha256=e149d2c0ffd51913906247b67bdc2b3a4495895d33da99df365d3e5a86fc9999,size=2193,mtime_ns=1781962643100699772
+static_canonical_seed42,path=/root/workspace/Health-EC-workspace/Health-EC/experiments/results/t3_4_4_overlap_formal_matrix/static_canonical_seed42.csv,sha256=91d3979b7aad621ef4cb1e7d0a2cec64b02b7993411b243579351f34b7ffb6aa,size=660,mtime_ns=1781962643187432142
+t3_4_4_validation,path=/root/workspace/Health-EC-workspace/Health-EC/experiments/results/t3_4_4_overlap_formal_matrix/validation.txt,sha256=719bf6011aa940d1e17d1bde8d8ff103e3e8d39723fc4f6de841231fa35da164,size=2968,mtime_ns=1781962643235921974
+t3_4_4_artifact_provenance,path=/root/workspace/Health-EC-workspace/Health-EC/experiments/results/t3_4_4_overlap_formal_matrix/artifact_provenance.txt,sha256=c3f78da23864acd1a321d683e9045e8f59972348da1088a34bf7c169a28e4a6d,size=3515,mtime_ns=1781962643234921965
+t2_8_2_5_selected,path=/root/workspace/Health-EC-workspace/Health-EC/experiments/results/t2_8_2_5_upper_a_expansion/selected_health_ec_params.txt,sha256=8e8d5ee91a8be5d2c197c0d402e77c0b5e463fdd95b4949b18a2b29026a811d7,size=2302,mtime_ns=1781375209328316621
+t2_8_2_5_validation,path=/root/workspace/Health-EC-workspace/Health-EC/experiments/results/t2_8_2_5_upper_a_expansion/validation.txt,sha256=6b93a7e1b7b3c542936aa6b56f1f3e93961b94beb96618e69831826518994c53,size=462,mtime_ns=1781375073823949225
+t3_4_3_validation_gate,path=/root/workspace/Health-EC-workspace/Health-EC/experiments/results/t3_4_3_overlap_smoke/validation.txt,sha256=3b1f4c96c9676d8fd5d9751d9859542dc3c7442761bd5544891c81cdf48a5bd9,size=1668,mtime_ns=1781728553255670373
+t3_4_3_artifact_provenance,path=/root/workspace/Health-EC-workspace/Health-EC/experiments/results/t3_4_3_overlap_smoke/artifact_provenance.txt,sha256=5e6e631ebc7353eaf589d9fc625a5e67df86f137e85d03cc83b82c1d65aca71c,size=3198,mtime_ns=1781728553256183906

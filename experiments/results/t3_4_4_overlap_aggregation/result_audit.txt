@@ -1,0 +1,31 @@
+T3.4.4 overlap result audit
+STATUS=PASS
+input_policy=only T3.4.4 white-listed formal raw artifacts
+overlap_windows=5..14
+overlap_gate=health_ec_overlap_p99 <= tdr_overlap_p99 + 2ms; bw_ratio <= 0.6
+
+policy_medians:
+vanilla_ec: p99_ms=55, post_warmup_p99_ms=63.35, severe_p99_ms=64.25, bw_pct=0, coverage_pct=-1, mig_tp_fp_fn=-1/-1/-1, mig_precision_pct=-1, mig_recall_pct=-1
+late_binding: p99_ms=23.5, post_warmup_p99_ms=26.5, severe_p99_ms=27.1, bw_pct=25, coverage_pct=-1, mig_tp_fp_fn=-1/-1/-1, mig_precision_pct=-1, mig_recall_pct=-1
+timeout_degraded_read: p99_ms=27.4, post_warmup_p99_ms=28.2, severe_p99_ms=28.8, bw_pct=4.5, coverage_pct=-1, mig_tp_fp_fn=-1/-1/-1, mig_precision_pct=-1, mig_recall_pct=-1
+health_ec: p99_ms=21.3, post_warmup_p99_ms=22.8, severe_p99_ms=25, bw_pct=0.5, coverage_pct=88.15, mig_tp_fp_fn=179/0/36368, mig_precision_pct=100, mig_recall_pct=0.49
+
+comparative_audit:
+health_vs_tdr_post_warmup_p99_gap_ms=-5.4
+health_vs_tdr_severe_p99_gap_ms=-3.8
+health_overlap_window_p99_median_ms=25.4
+tdr_overlap_window_p99_median_ms=30.95
+late_binding_overlap_window_p99_median_ms=27.225
+health_vs_tdr_overlap_window_p99_gap_ms=-5.55
+health_vs_late_binding_overlap_window_p99_gap_ms=-1.825
+health_vs_late_binding_post_warmup_p99_gap_ms=-3.7
+health_vs_late_binding_severe_p99_gap_ms=-2.1
+health_bw_vs_tdr_ratio=0.111
+health_bw_vs_late_binding_ratio=0.02
+overlap_result_candidate=YES
+
+interpretation:
+Health-EC should be interpreted with separate read-bypass and migration metrics. Read-bypass coverage is not migration recall.
+Observed migration false positives are artifact results; do not generalize zero observed FP as a universal guarantee.
+Current overlap evidence passes the default stability gate: Health-EC overlap-window P99 is within 2 ms of TDR while using substantially less bandwidth and no observed FP in this matrix.
+Reporting boundary: T3.4 is overlap stability evidence, not a replacement for T3.1 realistic or T3.2 stress comparisons.
