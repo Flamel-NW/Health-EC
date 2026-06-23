@@ -94,6 +94,31 @@ static std::vector<DiskId> disk_range(DiskId first, DiskId last_inclusive) {
     return out;
 }
 
+static ScenarioSpec make_dynamic_sensitivity_spec(
+    const char* name,
+    DiskId group_a_first,
+    DiskId group_a_last,
+    DiskId group_b_first,
+    DiskId group_b_last)
+{
+    std::vector<DiskId> group_a = disk_range(group_a_first, group_a_last);
+    std::vector<DiskId> group_b = disk_range(group_b_first, group_b_last);
+    std::vector<DiskId> all = group_a;
+    all.insert(all.end(), group_b.begin(), group_b.end());
+    return {
+        name,
+        true,
+        REALISTIC_NUM_DISKS,
+        group_a.front(),
+        group_b.front(),
+        all,
+        group_a,
+        group_b,
+        false,
+        false,
+    };
+}
+
 static ScenarioSpec scenario_spec_for_name(const std::string& scenario) {
     if (scenario == "canonical_stress20") {
         return {
@@ -170,6 +195,22 @@ static ScenarioSpec scenario_spec_for_name(const std::string& scenario) {
             false,
         };
     }
+    if (scenario == "dynamic_sensitivity_100d_2pct_hdd") {
+        return make_dynamic_sensitivity_spec(
+            "dynamic_sensitivity_100d_2pct_hdd", 98, 98, 99, 99);
+    }
+    if (scenario == "dynamic_sensitivity_100d_4pct_hdd") {
+        return make_dynamic_sensitivity_spec(
+            "dynamic_sensitivity_100d_4pct_hdd", 96, 97, 98, 99);
+    }
+    if (scenario == "dynamic_sensitivity_100d_10pct_hdd") {
+        return make_dynamic_sensitivity_spec(
+            "dynamic_sensitivity_100d_10pct_hdd", 90, 94, 95, 99);
+    }
+    if (scenario == "dynamic_sensitivity_100d_20pct_hdd") {
+        return make_dynamic_sensitivity_spec(
+            "dynamic_sensitivity_100d_20pct_hdd", 80, 89, 90, 99);
+    }
     throw std::invalid_argument("invalid --scenario: " + scenario);
 }
 
@@ -178,7 +219,11 @@ static bool is_valid_scenario_name(const std::string& scenario) {
            scenario == "dynamic_degradation" ||
            scenario == "dynamic_realistic_100d_2pct_hdd" ||
            scenario == "dynamic_stress_100d_20pct_hdd" ||
-           scenario == "dynamic_overlap_100d_4pct_hdd";
+           scenario == "dynamic_overlap_100d_4pct_hdd" ||
+           scenario == "dynamic_sensitivity_100d_2pct_hdd" ||
+           scenario == "dynamic_sensitivity_100d_4pct_hdd" ||
+           scenario == "dynamic_sensitivity_100d_10pct_hdd" ||
+           scenario == "dynamic_sensitivity_100d_20pct_hdd";
 }
 
 // Helpers.
@@ -300,6 +345,7 @@ struct RuntimeConfig {
     PolicyKind single_policy = PolicyKind::VanillaEC;
     double timeout_ms = DEFAULT_TIMEOUT_MS;
     bool timeout_ms_explicit = false;
+    double slowdown_scale = 1.0;
     ScoreParams health_ec_params = locked_health_ec_params();
     OutputFormat format = OutputFormat::Table;
     bool extended_metrics = false;
@@ -422,6 +468,8 @@ static RuntimeConfig parse_args(int argc, char** argv) {
         } else if (arg == "--timeout-ms") {
             cfg.timeout_ms = parse_nonnegative_double(require_value(arg), arg);
             cfg.timeout_ms_explicit = true;
+        } else if (arg == "--slowdown-scale") {
+            cfg.slowdown_scale = parse_positive_double(require_value(arg), arg);
         } else if (arg == "--health-theta-s") {
             cfg.health_ec_params.theta_S =
                 parse_positive_double(require_value(arg), arg);
@@ -778,6 +826,7 @@ struct LatentWorld {
     DiskId slow_disk_a = DEFAULT_SLOW_DISK_A;
     DiskId slow_disk_b = DEFAULT_SLOW_DISK_B;
     uint64_t seed = DEFAULT_SEED;
+    double slowdown_scale = 1.0;
     bool precompute_all_disk_latencies = true;
     std::vector<ScheduleEvent> schedule;
     std::vector<LatentRequest> requests;
@@ -858,12 +907,28 @@ static const char* disk_state_name(DiskState state) {
     return "unknown";
 }
 
-static DiskProfile profile_for_state(DiskState state) {
+static DiskProfile scale_slow_profile(const DiskProfile& profile, double scale) {
+    DiskProfile scaled = profile;
+    scaled.slow_mean_ms =
+        PROFILE_BASELINE.base_mean_ms +
+        scale * (profile.slow_mean_ms - PROFILE_BASELINE.base_mean_ms);
+    scaled.slow_jitter_ms =
+        PROFILE_BASELINE.base_jitter_ms +
+        scale * (profile.slow_jitter_ms - PROFILE_BASELINE.base_jitter_ms);
+    scaled.spike_prob = std::clamp(scale * profile.spike_prob, 0.0, 1.0);
+    scaled.spike_ms = scale * profile.spike_ms;
+    return scaled;
+}
+
+static DiskProfile profile_for_state(DiskState state, double slowdown_scale) {
     switch (state) {
         case DiskState::Healthy: return PROFILE_BASELINE;
-        case DiskState::MildSlow: return PROFILE_MILD;
-        case DiskState::SevereSlow: return PROFILE_SEVERE;
-        case DiskState::Recovery: return PROFILE_RECOVERY;
+        case DiskState::MildSlow:
+            return scale_slow_profile(PROFILE_MILD, slowdown_scale);
+        case DiskState::SevereSlow:
+            return scale_slow_profile(PROFILE_SEVERE, slowdown_scale);
+        case DiskState::Recovery:
+            return scale_slow_profile(PROFILE_RECOVERY, slowdown_scale);
     }
     return PROFILE_BASELINE;
 }
@@ -996,7 +1061,7 @@ static double latency_on_disk(const LatentWorld& world,
         world.schedule, disk, shard.window_id);
     return deterministic_latency_ms(
         world.seed, shard.read_index, shard.shard, disk,
-        shard.is_parity, profile_for_state(disk_state));
+        shard.is_parity, profile_for_state(disk_state, world.slowdown_scale));
 }
 
 static std::unordered_map<ShardId, DiskId> initial_logical_disks(
@@ -1145,6 +1210,7 @@ static LatentWorld build_dynamic_world(const RuntimeConfig& runtime,
     world.slow_disk_a = spec.slow_disk_a;
     world.slow_disk_b = spec.slow_disk_b;
     world.seed = runtime.seed;
+    world.slowdown_scale = runtime.slowdown_scale;
     world.precompute_all_disk_latencies = spec.precompute_all_disk_latencies;
     world.schedule = dynamic_schedule(spec);
     world.requests.reserve(runtime.num_reads);
@@ -1185,7 +1251,8 @@ static LatentWorld build_dynamic_world(const RuntimeConfig& runtime,
                 for (DiskId d = 0; d < world.num_disks; ++d) {
                     DiskState disk_state = state_for_disk_window(
                         world.schedule, d, window_id);
-                    sim->set_profile(d, profile_for_state(disk_state));
+                    sim->set_profile(
+                        d, profile_for_state(disk_state, world.slowdown_scale));
                     latent.latency_by_disk[static_cast<std::size_t>(d)] =
                         sim->sample_latency_ms(d);
                 }
