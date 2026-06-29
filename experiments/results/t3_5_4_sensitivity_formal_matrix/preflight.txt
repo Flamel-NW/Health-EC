@@ -1,0 +1,42 @@
+T3.5.4 sensitivity formal matrix preflight
+
+$ git status --short --branch
+returncode=0
+--- stdout ---
+## dev...origin/dev
+?? experiments/results/t3_5_4_sensitivity_formal_matrix/
+
+$ git rev-parse HEAD
+returncode=0
+--- stdout ---
+905a1c1de8e0a1414aacf0d6bb5469e0c0070915
+
+$ git status --short --branch
+returncode=0
+--- stdout ---
+## master...origin/master
+?? scripts/lib/__pycache__/
+
+$ git rev-parse HEAD
+returncode=0
+--- stdout ---
+ee55c08c1c3c4512a785997310737ea6eaa85b5a
+
+$ cat /proc/loadavg
+returncode=0
+--- stdout ---
+0.14 0.30 0.45 1/373 22
+
+$ free -h
+returncode=0
+--- stdout ---
+               total        used        free      shared  buff/cache   available
+Mem:            31Gi       1.6Gi        27Gi       1.0Mi       2.5Gi        29Gi
+Swap:             0B          0B          0B
+
+$ df -h /
+returncode=0
+--- stdout ---
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/root        48G   36G   13G  75% /
+

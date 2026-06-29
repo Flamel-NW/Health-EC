@@ -1,0 +1,18 @@
+T3.5.4 sensitivity result audit
+STATUS=PASS
+input_policy=only T3.5.4 white-listed formal raw artifacts
+reporting_boundary=sensitivity/trend evidence only
+combined_axis_claims=NOT_SUPPORTED_BY_ONE_FACTOR_AT_A_TIME
+read_bypass_coverage_is_not_migration_recall=TRUE
+observed_zero_fp_is_not_universal_guarantee=TRUE
+
+slow_ratio_2pct: axis=slow_ratio, value=2pct, health_p99=19, tdr_p99=22.3, post_gap_vs_tdr=-4.3, severe_gap_vs_tdr=-6.4, bw_ratio_vs_tdr=0.068, coverage=88.95, mig_fp_total=0
+slow_ratio_4pct_base: axis=slow_ratio, value=4pct, health_p99=22.15, tdr_p99=27, post_gap_vs_tdr=-1.9, severe_gap_vs_tdr=-4.2, bw_ratio_vs_tdr=0.067, coverage=79, mig_fp_total=0
+slow_ratio_10pct: axis=slow_ratio, value=10pct, health_p99=41.9, tdr_p99=52.25, post_gap_vs_tdr=-1.6, severe_gap_vs_tdr=-4.75, bw_ratio_vs_tdr=0.146, coverage=75.6, mig_fp_total=0
+slow_ratio_20pct: axis=slow_ratio, value=20pct, health_p99=62.8, tdr_p99=67, post_gap_vs_tdr=-0.1, severe_gap_vs_tdr=-3.3, bw_ratio_vs_tdr=0.204, coverage=72.15, mig_fp_total=0
+zipf_0_8: axis=zipf, value=0.8, health_p99=28.3, tdr_p99=29.75, post_gap_vs_tdr=-0.05, severe_gap_vs_tdr=-1.95, bw_ratio_vs_tdr=0.109, coverage=80.9, mig_fp_total=0
+zipf_1_2: axis=zipf, value=1.2, health_p99=20, tdr_p99=23.3, post_gap_vs_tdr=-3.4, severe_gap_vs_tdr=-12.9, bw_ratio_vs_tdr=0.047, coverage=73.55, mig_fp_total=0
+slowdown_0_5: axis=slowdown_scale, value=0.5, health_p99=20.2, tdr_p99=22.1, post_gap_vs_tdr=-0.9, severe_gap_vs_tdr=-1.65, bw_ratio_vs_tdr=0.068, coverage=64.05, mig_fp_total=0
+slowdown_1_5: axis=slowdown_scale, value=1.5, health_p99=26, tdr_p99=33, post_gap_vs_tdr=-1.2, severe_gap_vs_tdr=-6.6, bw_ratio_vs_tdr=0.089, coverage=88.4, mig_fp_total=0
+
+claim_gate=PASS
