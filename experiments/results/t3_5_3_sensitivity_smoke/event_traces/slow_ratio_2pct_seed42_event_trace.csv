@@ -1,0 +1,14 @@
+scenario,num_disks,seed,event_id,disk_id,state,start_window,end_window,start_read,end_read,is_migration_positive,notes
+dynamic_sensitivity_100d_2pct_hdd,100,42,0,98,healthy,0,3,0,150000,0,warmup_before_first_onset
+dynamic_sensitivity_100d_2pct_hdd,100,42,1,98,mild_slow,3,6,150000,300000,1,first_gradual_degradation
+dynamic_sensitivity_100d_2pct_hdd,100,42,2,98,severe_slow,6,9,300000,450000,1,sustained_severe_period
+dynamic_sensitivity_100d_2pct_hdd,100,42,3,98,recovery,9,11,450000,550000,0,partial_recovery
+dynamic_sensitivity_100d_2pct_hdd,100,42,4,98,healthy,11,14,550000,700000,0,recovered_interval
+dynamic_sensitivity_100d_2pct_hdd,100,42,5,98,mild_slow,14,15,700000,750000,1,relapse
+dynamic_sensitivity_100d_2pct_hdd,100,42,6,98,recovery,15,16,750000,800000,0,relapse_recovery
+dynamic_sensitivity_100d_2pct_hdd,100,42,7,98,healthy,16,20,800000,1000000,0,post_recovery_observation
+dynamic_sensitivity_100d_2pct_hdd,100,42,8,99,healthy,0,9,0,450000,0,staggered_later_onset
+dynamic_sensitivity_100d_2pct_hdd,100,42,9,99,mild_slow,9,11,450000,550000,1,second_disk_mild_period
+dynamic_sensitivity_100d_2pct_hdd,100,42,10,99,severe_slow,11,14,550000,700000,1,second_disk_severe_period
+dynamic_sensitivity_100d_2pct_hdd,100,42,11,99,recovery,14,16,700000,800000,0,second_disk_recovery
+dynamic_sensitivity_100d_2pct_hdd,100,42,12,99,healthy,16,20,800000,1000000,0,second_disk_post_recovery

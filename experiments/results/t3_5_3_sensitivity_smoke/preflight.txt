@@ -1,0 +1,42 @@
+T3.5.3 sensitivity smoke preflight
+
+$ git status --short --branch
+returncode=0
+--- stdout ---
+## dev...origin/dev
+?? experiments/results/t3_5_3_sensitivity_smoke/
+
+$ git rev-parse HEAD
+returncode=0
+--- stdout ---
+ea8dec50bb4508566d4d713fdacc5bcdb0fc7bd0
+
+$ git status --short --branch
+returncode=0
+--- stdout ---
+## master...origin/master
+?? scripts/lib/__pycache__/
+
+$ git rev-parse HEAD
+returncode=0
+--- stdout ---
+52f84d77f052defbf95625ba93e56e62a63f02d1
+
+$ cat /proc/loadavg
+returncode=0
+--- stdout ---
+0.16 0.32 0.30 2/281 22
+
+$ free -h
+returncode=0
+--- stdout ---
+               total        used        free      shared  buff/cache   available
+Mem:            31Gi       1.0Gi        28Gi       1.1Mi       1.8Gi        30Gi
+Swap:             0B          0B          0B
+
+$ df -h /
+returncode=0
+--- stdout ---
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/root        48G   35G   13G  74% /
+
