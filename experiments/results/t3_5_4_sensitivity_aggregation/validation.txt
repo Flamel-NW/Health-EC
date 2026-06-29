@@ -1,0 +1,21 @@
+STATUS=PASS
+T3.5.4 sensitivity aggregation PASS
+input_policy=only T3.5.4 white-listed formal raw artifacts
+reporting_boundary=sensitivity/trend evidence only
+case_manifest_rows=8
+aggregate_rows=960
+windowed_rows=19200
+summary_by_case_policy_rows=32
+summary_by_axis_rows=8
+sensitivity_table_rows=8
+sensitivity_figure_source_rows=32
+formal_validation_gate=PASS
+formal_provenance_gate=PASS
+t2_8_2_5_lock_gate=PASS
+combined_axis_claims=NOT_SUPPORTED
+summary_by_case_policy=/root/workspace/Health-EC-workspace/Health-EC/experiments/results/t3_5_4_sensitivity_aggregation/summary_by_case_policy.csv
+summary_by_axis=/root/workspace/Health-EC-workspace/Health-EC/experiments/results/t3_5_4_sensitivity_aggregation/summary_by_axis.csv
+sensitivity_table=/root/workspace/Health-EC-workspace/Health-EC/experiments/results/t3_5_4_sensitivity_aggregation/sensitivity_table.csv
+sensitivity_figure_source=/root/workspace/Health-EC-workspace/Health-EC/experiments/results/t3_5_4_sensitivity_aggregation/sensitivity_figure_source.csv
+result_audit=/root/workspace/Health-EC-workspace/Health-EC/experiments/results/t3_5_4_sensitivity_aggregation/result_audit.txt
+aggregation_provenance=/root/workspace/Health-EC-workspace/Health-EC/experiments/results/t3_5_4_sensitivity_aggregation/aggregation_provenance.txt

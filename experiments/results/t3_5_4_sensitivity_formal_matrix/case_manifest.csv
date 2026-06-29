@@ -1,0 +1,9 @@
+case_id,sensitivity_axis,sensitivity_value,scenario,zipf_s,slowdown_scale,slow_disk_group_a,slow_disk_group_b,event_trace_rows
+slow_ratio_2pct,slow_ratio,2pct,dynamic_sensitivity_100d_2pct_hdd,1,1,98,99,13
+slow_ratio_4pct_base,slow_ratio,4pct,dynamic_sensitivity_100d_4pct_hdd,1,1,96 97,98 99,26
+slow_ratio_10pct,slow_ratio,10pct,dynamic_sensitivity_100d_10pct_hdd,1,1,90 91 92 93 94,95 96 97 98 99,65
+slow_ratio_20pct,slow_ratio,20pct,dynamic_sensitivity_100d_20pct_hdd,1,1,80 81 82 83 84 85 86 87 88 89,90 91 92 93 94 95 96 97 98 99,130
+zipf_0_8,zipf,0.8,dynamic_sensitivity_100d_4pct_hdd,0.8,1,96 97,98 99,26
+zipf_1_2,zipf,1.2,dynamic_sensitivity_100d_4pct_hdd,1.2,1,96 97,98 99,26
+slowdown_0_5,slowdown_scale,0.5,dynamic_sensitivity_100d_4pct_hdd,1,0.5,96 97,98 99,26
+slowdown_1_5,slowdown_scale,1.5,dynamic_sensitivity_100d_4pct_hdd,1,1.5,96 97,98 99,26
