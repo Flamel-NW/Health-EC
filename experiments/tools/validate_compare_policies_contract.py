@@ -1053,6 +1053,136 @@ def check_migration_trace_contract(runner):
         ])
 
 
+def health_row(stdout):
+    rows = csv_rows(stdout, EXTENDED_DYNAMIC_HEADER)
+    matches = [row for row in rows if row["policy"] == "health_ec"]
+    if len(matches) != 1:
+        fail(f"expected one Health-EC row, got {len(matches)}")
+    return matches[0]
+
+
+def run_health_strategy(runner, extra_args, fmt="csv"):
+    cmd = [
+        runner,
+        "--scenario",
+        "dynamic_degradation",
+        "--num-reads",
+        "20000",
+        "--policy",
+        "health_ec",
+        "--format",
+        fmt,
+    ]
+    if fmt == "csv":
+        cmd.append("--extended-metrics")
+    cmd.extend(extra_args)
+    return run(cmd)
+
+
+def check_migration_strategy_flags(runner):
+    omitted = run_health_strategy(runner, [])
+    explicit_default = run_health_strategy(
+        runner,
+        ["--health-migration-strategy", "default"],
+    )
+    if omitted.stdout != explicit_default.stdout:
+        fail("explicit default migration strategy changed omitted-flag output")
+
+    disabled = health_row(
+        run_health_strategy(
+            runner,
+            ["--health-migration-strategy", "disabled"],
+        ).stdout
+    )
+    if int(disabled["migration_triggers"]) != 0:
+        fail(f"disabled strategy triggered migrations: {disabled}")
+    if int(disabled["migration_true_positives"]) != 0:
+        fail(f"disabled strategy reported true-positive migrations: {disabled}")
+    if int(disabled["migration_false_negatives"]) < 0:
+        fail(f"disabled strategy did not finalize migration FN: {disabled}")
+    disabled_trace = run_health_strategy(
+        runner,
+        ["--health-migration-strategy", "disabled"],
+        fmt="migration_trace",
+    )
+    if csv_rows_allow_empty(disabled_trace.stdout, MIGRATION_TRACE_HEADER):
+        fail("disabled strategy wrote migration_trace rows")
+
+    default_row = health_row(omitted.stdout)
+    threshold_row = health_row(
+        run_health_strategy(
+            runner,
+            [
+                "--health-migration-strategy",
+                "threshold_alpha",
+                "--health-theta-d",
+                "0.01",
+                "--health-alpha-d",
+                "0.1",
+            ],
+        ).stdout
+    )
+    if int(threshold_row["migration_triggers"]) <= int(default_row["migration_triggers"]):
+        fail(
+            "low-threshold threshold_alpha did not increase migration count: "
+            f"default={default_row} threshold={threshold_row}"
+        )
+
+    topk_rows = csv_rows(
+        run_health_strategy(
+            runner,
+            [
+                "--health-migration-strategy",
+                "topk_budgeted",
+                "--health-theta-d",
+                "0.01",
+                "--health-alpha-d",
+                "0.1",
+                "--health-migration-top-k-per-window",
+                "2",
+            ],
+            fmt="windowed_csv",
+        ).stdout,
+        WINDOWED_HEADER,
+    )
+    if sum(int(row["migration_triggers"]) for row in topk_rows) == 0:
+        fail("topk_budgeted strategy produced no lightweight migrations")
+    for row in topk_rows:
+        if int(row["migration_triggers"]) > 2:
+            fail(f"topk_budgeted exceeded per-window cap: {row}")
+
+    hybrid_trace = csv_rows_allow_empty(
+        run_health_strategy(
+            runner,
+            [
+                "--health-migration-strategy",
+                "hybrid",
+                "--health-theta-d",
+                "0.01",
+                "--health-alpha-d",
+                "0.1",
+                "--health-migration-evidence-windows",
+                "1",
+                "--health-migration-top-k-per-window",
+                "4",
+                "--health-migration-cooldown-windows",
+                "1",
+            ],
+            fmt="migration_trace",
+        ).stdout,
+        MIGRATION_TRACE_HEADER,
+    )
+    if not hybrid_trace:
+        fail("hybrid strategy produced no lightweight migration trace rows")
+    by_shard = {}
+    for row in hybrid_trace:
+        shard = row["shard_id"]
+        window_id = int(row["window_id"])
+        if shard in by_shard and window_id - by_shard[shard] <= 1:
+            fail(f"hybrid cooldown allowed adjacent-window remigration: {row}")
+        by_shard[shard] = window_id
+
+
 def check_negative_commands(runner):
     run(
         [
@@ -1181,6 +1311,79 @@ def check_negative_commands(runner):
             "--num-reads",
             "20000",
             "--policy",
+            "health_ec",
+            "--format",
+            "csv",
+            "--health-migration-strategy",
+            "not_a_strategy",
+        ],
+        expect_success=False,
+        expected_stderr="invalid --health-migration-strategy",
+    )
+    for flag in [
+        "--health-migration-evidence-windows",
+        "--health-migration-top-k-per-window",
+        "--health-migration-cooldown-windows",
+    ]:
+        run(
+            [
+                runner,
+                "--scenario",
+                "dynamic_degradation",
+                "--num-reads",
+                "20000",
+                "--policy",
+                "health_ec",
+                "--format",
+                "csv",
+                flag,
+                "-1",
+            ],
+            expect_success=False,
+            expected_stderr="must be a non-negative integer",
+        )
+    run(
+        [
+            runner,
+            "--scenario",
+            "dynamic_degradation",
+            "--num-reads",
+            "20000",
+            "--policy",
+            "health_ec",
+            "--format",
+            "csv",
+            "--health-alpha-d",
+            "-1",
+        ],
+        expect_success=False,
+        expected_stderr="must be positive",
+    )
+    run(
+        [
+            runner,
+            "--scenario",
+            "dynamic_degradation",
+            "--num-reads",
+            "20000",
+            "--policy",
+            "health_ec",
+            "--format",
+            "csv",
+            "--health-alpha-d",
+            "0.3",
+        ],
+        expect_success=False,
+        expected_stderr="less than alpha_S",
+    )
+    run(
+        [
+            runner,
+            "--scenario",
+            "dynamic_degradation",
+            "--num-reads",
+            "20000",
+            "--policy",
             "timeout_degraded_read",
             "--format",
             "migration_trace",
@@ -1208,6 +1411,7 @@ def main():
     check_t3_sensitivity_event_trace_contract(runner)
     check_slowdown_scale_contract(runner)
     check_migration_trace_contract(runner)
+    check_migration_strategy_flags(runner)
     check_negative_commands(runner)
 
 
