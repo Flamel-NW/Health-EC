@@ -17,6 +17,7 @@
 #include <array>
 #include <cmath>
 #include <cstdint>
+#include <deque>
 #include <exception>
 #include <filesystem>
 #include <iomanip>
@@ -26,6 +27,7 @@
 #include <stdexcept>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 #include <unistd.h>
@@ -327,12 +329,28 @@ enum class PolicySelection {
     Single,
 };
 
+enum class MigrationStrategyKind {
+    Default,
+    Disabled,
+    ThresholdAlpha,
+    WindowEvidence,
+    TopKBudgeted,
+    Hybrid,
+};
+
 enum class OutputFormat {
     Table,
     Csv,
     WindowedCsv,
     EventTrace,
     MigrationTrace,
+};
+
+struct MigrationStrategyConfig {
+    MigrationStrategyKind kind = MigrationStrategyKind::Default;
+    int evidence_windows = 0;
+    int top_k_per_window = 0;
+    int cooldown_windows = 0;
 };
 
 struct RuntimeConfig {
@@ -347,6 +365,7 @@ struct RuntimeConfig {
     bool timeout_ms_explicit = false;
     double slowdown_scale = 1.0;
     ScoreParams health_ec_params = locked_health_ec_params();
+    MigrationStrategyConfig migration_strategy;
     OutputFormat format = OutputFormat::Table;
     bool extended_metrics = false;
 };
@@ -355,6 +374,7 @@ struct PolicyConfig {
     PolicyKind kind;
     double timeout_ms = 0.0;
     ScoreParams health_ec_params{};
+    MigrationStrategyConfig migration_strategy{};
 };
 
 struct RunResult {
@@ -388,12 +408,36 @@ static PolicyKind parse_policy_kind(const std::string& value) {
     throw std::invalid_argument("invalid --policy: " + value);
 }
 
+static MigrationStrategyKind parse_migration_strategy_kind(
+    const std::string& value)
+{
+    if (value == "default") return MigrationStrategyKind::Default;
+    if (value == "disabled") return MigrationStrategyKind::Disabled;
+    if (value == "threshold_alpha") return MigrationStrategyKind::ThresholdAlpha;
+    if (value == "window_evidence") return MigrationStrategyKind::WindowEvidence;
+    if (value == "topk_budgeted") return MigrationStrategyKind::TopKBudgeted;
+    if (value == "hybrid") return MigrationStrategyKind::Hybrid;
+    throw std::invalid_argument(
+        "invalid --health-migration-strategy: " + value);
+}
+
 static int parse_positive_int(const std::string& value, const std::string& name) {
     std::size_t idx = 0;
     long parsed = std::stol(value, &idx, 10);
     if (idx != value.size() || parsed <= 0 ||
         parsed > static_cast<long>(std::numeric_limits<int>::max())) {
         throw std::invalid_argument(name + " must be a positive integer");
+    }
+    return static_cast<int>(parsed);
+}
+
+static int parse_nonnegative_int(const std::string& value,
+                                 const std::string& name) {
+    std::size_t idx = 0;
+    long parsed = std::stol(value, &idx, 10);
+    if (idx != value.size() || parsed < 0 ||
+        parsed > static_cast<long>(std::numeric_limits<int>::max())) {
+        throw std::invalid_argument(name + " must be a non-negative integer");
     }
     return static_cast<int>(parsed);
 }
@@ -482,6 +526,21 @@ static RuntimeConfig parse_args(int argc, char** argv) {
         } else if (arg == "--health-parity-win-abs-ms") {
             cfg.health_ec_params.parity_win_abs_ms =
                 parse_nonnegative_double(require_value(arg), arg);
+        } else if (arg == "--health-migration-strategy") {
+            cfg.migration_strategy.kind =
+                parse_migration_strategy_kind(require_value(arg));
+        } else if (arg == "--health-alpha-d") {
+            cfg.health_ec_params.alpha_D =
+                parse_positive_double(require_value(arg), arg);
+        } else if (arg == "--health-migration-evidence-windows") {
+            cfg.migration_strategy.evidence_windows =
+                parse_nonnegative_int(require_value(arg), arg);
+        } else if (arg == "--health-migration-top-k-per-window") {
+            cfg.migration_strategy.top_k_per_window =
+                parse_nonnegative_int(require_value(arg), arg);
+        } else if (arg == "--health-migration-cooldown-windows") {
+            cfg.migration_strategy.cooldown_windows =
+                parse_nonnegative_int(require_value(arg), arg);
         } else if (arg == "--format") {
             std::string value = require_value(arg);
             if (value == "table") {
@@ -537,6 +596,10 @@ static void validate_runtime_config(const RuntimeConfig& cfg) {
          cfg.single_policy != PolicyKind::HealthEC)) {
         throw std::invalid_argument(
             "migration_trace requires --policy health_ec");
+    }
+    if (cfg.health_ec_params.alpha_D >= cfg.health_ec_params.alpha_S) {
+        throw std::invalid_argument(
+            "--health-alpha-d must be less than alpha_S");
     }
 }
 
@@ -606,8 +669,10 @@ static PolicyConfig make_policy_config(PolicyKind kind,
     PolicyConfig cfg{.kind=kind};
     if (kind == PolicyKind::TimeoutDegradedRead)
         cfg.timeout_ms = runtime.timeout_ms;
-    if (kind == PolicyKind::HealthEC)
+    if (kind == PolicyKind::HealthEC) {
         cfg.health_ec_params = health_params;
+        cfg.migration_strategy = runtime.migration_strategy;
+    }
     return cfg;
 }
 
@@ -754,7 +819,9 @@ static RunResult run_policy(DiskSimulator& sim, const Layout& layout,
                 st.S = (1.0 - p.alpha_S) * st.S + p.alpha_S * w_s * win;
                 st.D = (1.0 - p.alpha_D) * st.D + p.alpha_D * w_s * win;
 
-                if (st.D > p.theta_D) {
+                if (st.D > p.theta_D &&
+                    config.migration_strategy.kind !=
+                        MigrationStrategyKind::Disabled) {
                     result.migration_triggers++;
                     if (!layout.is_slow.count(sh))
                         result.migration_false_positives++;
@@ -887,6 +954,22 @@ struct EventShardStats {
     bool migrated = false;
     bool trigger_recorded = false;
     int trigger_window = -1;
+};
+
+struct ScoreState {
+    double S = 0.0;
+    double D = 0.0;
+};
+
+struct EvidenceState {
+    int last_window = -1;
+    int consecutive_windows = 0;
+};
+
+struct PendingMigrationCandidate {
+    ShardId shard_id = 0;
+    LatentRequest request;
+    double max_death_score = 0.0;
 };
 
 static bool is_migration_positive(DiskState state) {
@@ -1502,6 +1585,159 @@ static void record_migration_trigger(
         result.recovery_regret_reads++;
 }
 
+static bool migration_strategy_uses_topk(const MigrationStrategyConfig& config) {
+    return config.kind == MigrationStrategyKind::TopKBudgeted ||
+           config.kind == MigrationStrategyKind::Hybrid;
+}
+
+static bool migration_strategy_uses_evidence(
+    const MigrationStrategyConfig& config)
+{
+    return config.kind == MigrationStrategyKind::WindowEvidence ||
+           config.kind == MigrationStrategyKind::Hybrid;
+}
+
+static void record_migration_evidence(
+    std::unordered_map<ShardId, EvidenceState>& evidence,
+    ShardId shard,
+    int window_id)
+{
+    auto& state = evidence[shard];
+    if (state.last_window == window_id)
+        return;
+    if (state.last_window == window_id - 1)
+        state.consecutive_windows++;
+    else
+        state.consecutive_windows = 1;
+    state.last_window = window_id;
+}
+
+static bool evidence_gate_passes(
+    const MigrationStrategyConfig& config,
+    const std::unordered_map<ShardId, EvidenceState>& evidence,
+    ShardId shard)
+{
+    if (!migration_strategy_uses_evidence(config) ||
+        config.evidence_windows <= 0) {
+        return true;
+    }
+    auto it = evidence.find(shard);
+    return it != evidence.end() &&
+           it->second.consecutive_windows >= config.evidence_windows;
+}
+
+static bool cooldown_gate_passes(
+    const MigrationStrategyConfig& config,
+    const std::unordered_map<ShardId, int>& cooldown_until_window,
+    ShardId shard,
+    int window_id)
+{
+    if (config.cooldown_windows <= 0)
+        return true;
+    auto it = cooldown_until_window.find(shard);
+    return it == cooldown_until_window.end() || window_id > it->second;
+}
+
+static bool try_apply_migration(
+    DynamicRunResult& result,
+    const LatentWorld& world,
+    const LatentRequest& req,
+    ShardId shard,
+    std::unordered_map<ShardId, DiskId>& logical_disk,
+    const std::vector<double>& disk_health,
+    std::unordered_map<int, std::unordered_map<ShardId, EventShardStats>>& event_stats,
+    std::unordered_map<ShardId, ScoreState>& scores,
+    std::unordered_map<ShardId, int>& cooldown_until_window,
+    const MigrationStrategyConfig& strategy)
+{
+    const LatentShard* data_shard = find_data_shard(req, shard);
+    if (!data_shard)
+        return false;
+    DiskId current_disk = logical_disk_for(logical_disk, *data_shard);
+    DiskId target = select_migration_target(
+        req, logical_disk, disk_health, current_disk);
+    if (target == -1)
+        return false;
+
+    record_migration_trigger(
+        result, world, req, *data_shard, current_disk, target, event_stats);
+    logical_disk[shard] = target;
+    scores[shard].S = 0.0;
+    scores[shard].D = 0.0;
+    if (strategy.cooldown_windows > 0) {
+        cooldown_until_window[shard] =
+            req.window_id + strategy.cooldown_windows;
+    }
+    return true;
+}
+
+static void queue_migration_candidate(
+    std::unordered_map<ShardId, PendingMigrationCandidate>& queued,
+    const LatentRequest& req,
+    ShardId shard,
+    double death_score)
+{
+    auto& candidate = queued[shard];
+    if (candidate.shard_id == 0 && shard != 0)
+        candidate.shard_id = shard;
+    if (candidate.request.data.empty() || death_score > candidate.max_death_score) {
+        candidate.shard_id = shard;
+        candidate.request = req;
+        candidate.max_death_score = death_score;
+    }
+}
+
+static void apply_queued_migrations(
+    DynamicRunResult& result,
+    const LatentWorld& world,
+    const LatentRequest& current_req,
+    std::unordered_map<ShardId, PendingMigrationCandidate>& queued,
+    std::unordered_map<ShardId, DiskId>& logical_disk,
+    const std::vector<double>& disk_health,
+    std::unordered_map<int, std::unordered_map<ShardId, EventShardStats>>& event_stats,
+    std::unordered_map<ShardId, ScoreState>& scores,
+    std::unordered_map<ShardId, int>& cooldown_until_window,
+    const MigrationStrategyConfig& strategy)
+{
+    if (queued.empty() || strategy.top_k_per_window <= 0) {
+        queued.clear();
+        return;
+    }
+    std::vector<PendingMigrationCandidate> candidates;
+    candidates.reserve(queued.size());
+    for (const auto& [shard, candidate] : queued) {
+        (void)shard;
+        candidates.push_back(candidate);
+    }
+    std::sort(
+        candidates.begin(), candidates.end(),
+        [](const auto& a, const auto& b) {
+            if (a.max_death_score != b.max_death_score)
+                return a.max_death_score > b.max_death_score;
+            return a.shard_id < b.shard_id;
+        });
+
+    int applied = 0;
+    for (auto candidate : candidates) {
+        if (applied >= strategy.top_k_per_window)
+            break;
+        if (!cooldown_gate_passes(
+                strategy, cooldown_until_window, candidate.shard_id,
+                current_req.window_id)) {
+            continue;
+        }
+        candidate.request.read_index = current_req.read_index;
+        candidate.request.window_id = current_req.window_id;
+        if (try_apply_migration(
+                result, world, candidate.request, candidate.shard_id,
+                logical_disk, disk_health, event_stats, scores,
+                cooldown_until_window, strategy)) {
+            applied++;
+        }
+    }
+    queued.clear();
+}
+
 static void record_positive_event_reads(
     const LatentWorld& world,
     const LatentRequest& req,
@@ -1591,12 +1827,14 @@ static DynamicRunResult run_dynamic_policy(const LatentWorld& world,
                                            const Layout& layout,
                                            const PolicyConfig& config)
 {
-    struct ScoreState { double S = 0.0; double D = 0.0; };
     std::unordered_map<ShardId, ScoreState> scores;
     std::unordered_map<ShardId, DiskId> logical_disk = initial_logical_disks(layout);
     std::vector<double> disk_health(
         static_cast<std::size_t>(world.num_disks), 1.0);
     std::unordered_map<int, std::unordered_map<ShardId, EventShardStats>> event_stats;
+    std::unordered_map<ShardId, EvidenceState> migration_evidence;
+    std::unordered_map<ShardId, int> cooldown_until_window;
+    std::unordered_map<ShardId, PendingMigrationCandidate> queued_migrations;
 
     DynamicRunResult result;
     result.windows = make_dynamic_windows(world);
@@ -1611,8 +1849,23 @@ static DynamicRunResult run_dynamic_policy(const LatentWorld& world,
     }
 
     const int first_onset_read = world.first_onset_window * world.window_size;
+    int current_window = -1;
 
     for (const auto& req : world.requests) {
+        if (config.kind == PolicyKind::HealthEC &&
+            migration_strategy_uses_topk(config.migration_strategy) &&
+            req.window_id != current_window) {
+            if (current_window >= 0) {
+                apply_queued_migrations(
+                    result, world, req, queued_migrations, logical_disk,
+                    disk_health, event_stats, scores, cooldown_until_window,
+                    config.migration_strategy);
+            }
+            current_window = req.window_id;
+        } else if (req.window_id != current_window) {
+            current_window = req.window_id;
+        }
+
         record_data_reads(result, req);
         if (config.kind == PolicyKind::HealthEC)
             record_positive_event_reads(world, req, logical_disk, event_stats);
@@ -1788,21 +2041,26 @@ static DynamicRunResult run_dynamic_policy(const LatentWorld& world,
             st.S = (1.0 - p.alpha_S) * st.S + p.alpha_S * req.hotness * win;
             st.D = (1.0 - p.alpha_D) * st.D + p.alpha_D * req.hotness * win;
 
-            if (st.D > p.theta_D) {
-                const LatentShard* data_shard = find_data_shard(req, sh);
-                if (data_shard) {
-                    DiskId current_disk = logical_disk_for(logical_disk, *data_shard);
-                    DiskId target = select_migration_target(
-                        req, logical_disk, disk_health, current_disk);
-                    if (target == -1)
-                        continue;
-                    record_migration_trigger(
-                        result, world, req, *data_shard, current_disk, target,
-                        event_stats);
-                    logical_disk[sh] = target;
+            if (win > 0.0)
+                record_migration_evidence(migration_evidence, sh, req.window_id);
+
+            if (st.D > p.theta_D &&
+                config.migration_strategy.kind !=
+                    MigrationStrategyKind::Disabled &&
+                evidence_gate_passes(
+                    config.migration_strategy, migration_evidence, sh) &&
+                cooldown_gate_passes(
+                    config.migration_strategy, cooldown_until_window, sh,
+                    req.window_id)) {
+                if (migration_strategy_uses_topk(config.migration_strategy)) {
+                    queue_migration_candidate(
+                        queued_migrations, req, sh, st.D);
+                } else {
+                    try_apply_migration(
+                        result, world, req, sh, logical_disk, disk_health,
+                        event_stats, scores, cooldown_until_window,
+                        config.migration_strategy);
                 }
-                st.S = 0.0;
-                st.D = 0.0;
             }
         }
     }
