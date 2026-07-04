@@ -1,0 +1,5 @@
+scenario,num_disks,seed,num_reads,num_stripes,zipf_s,policy,timeout_ms,read_index,window_id,stripe_id,shard_id,source_disk,target_disk,is_migration_positive,event_id,disk_state
+dynamic_realistic_100d_2pct_hdd,100,71,1000000,5000,1.0,health_ec,15.0,156742,3,16,98,98,47,1,1,mild_slow
+dynamic_realistic_100d_2pct_hdd,100,71,1000000,5000,1.0,health_ec,15.0,301904,6,33,198,98,5,1,2,severe_slow
+dynamic_realistic_100d_2pct_hdd,100,71,1000000,5000,1.0,health_ec,15.0,454361,9,16,99,99,21,1,9,mild_slow
+dynamic_realistic_100d_2pct_hdd,100,71,1000000,5000,1.0,health_ec,15.0,483556,9,33,199,99,33,1,9,mild_slow

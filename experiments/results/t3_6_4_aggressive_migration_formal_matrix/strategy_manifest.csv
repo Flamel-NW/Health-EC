@@ -1,0 +1,21 @@
+strategy_id,strategy_kind,theta_D,alpha_D,evidence_windows,top_k_per_window,cooldown_windows,purpose
+t28_default,default,12,0.05,0,0,0,current default baseline
+migration_disabled,disabled,12,0.05,0,0,0,read-bypass-only baseline
+threshold_d2_a005,threshold_alpha,2,0.05,0,0,0,low threshold
+threshold_d4_a005,threshold_alpha,4,0.05,0,0,0,moderate threshold
+threshold_d6_a005,threshold_alpha,6,0.05,0,0,0,conservative threshold
+threshold_d8_a005,threshold_alpha,8,0.05,0,0,0,near-default threshold
+threshold_d2_a010,threshold_alpha,2,0.1,0,0,0,"low threshold, faster accumulation"
+threshold_d4_a010,threshold_alpha,4,0.1,0,0,0,"moderate threshold, faster accumulation"
+threshold_d6_a010,threshold_alpha,6,0.1,0,0,0,"conservative threshold, faster accumulation"
+threshold_d8_a010,threshold_alpha,8,0.1,0,0,0,"near-default threshold, faster accumulation"
+evidence_w2_d4,window_evidence,4,0.1,2,0,0,repeated evidence
+evidence_w2_d6,window_evidence,6,0.1,2,0,0,repeated evidence with higher threshold
+evidence_w3_d4,window_evidence,4,0.1,3,0,0,stronger persistence guard
+evidence_w3_d6,window_evidence,6,0.1,3,0,0,stronger guard with higher threshold
+topk_k2_d4,topk_budgeted,4,0.1,0,2,0,cap migration cost per window
+topk_k2_d6,topk_budgeted,6,0.1,0,2,0,cap with higher threshold
+topk_k4_d4,topk_budgeted,4,0.1,0,4,0,larger per-window migration budget
+topk_k4_d6,topk_budgeted,6,0.1,0,4,0,larger budget with higher threshold
+hybrid_w2_k2_d4_c1,hybrid,4,0.1,2,2,1,repeated evidence plus cost cap
+hybrid_w2_k4_d4_c1,hybrid,4,0.1,2,4,1,repeated evidence plus larger cap

@@ -1,0 +1,4 @@
+scenario_id,scenario,full_disk_bytes,num_disks,num_stripes,num_reads,zipf_s
+realistic_2pct,dynamic_realistic_100d_2pct_hdd,2457600,100,5000,1000000,1
+overlap_4pct,dynamic_overlap_100d_4pct_hdd,4915200,100,5000,1000000,1
+stress_20pct,dynamic_stress_100d_20pct_hdd,24576000,100,5000,1000000,1
