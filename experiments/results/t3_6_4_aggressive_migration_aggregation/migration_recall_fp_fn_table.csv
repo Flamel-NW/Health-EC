@@ -1,0 +1,13 @@
+scenario_id,strategy_id,migration_true_positives_total,migration_false_positives_total,migration_false_negatives_total,migration_precision_pct,migration_recall_pct
+overlap_4pct,migration_disabled,0,0,36673,-1,0
+overlap_4pct,t28_default,179,0,36368,100,0.48978
+overlap_4pct,threshold_d2_a005,1199,0,34675,100,3.342253
+overlap_4pct,threshold_d2_a010,1241,0,34474,100,3.474731
+realistic_2pct,migration_disabled,0,0,17801,-1,0
+realistic_2pct,t28_default,120,0,17551,100,0.679079
+realistic_2pct,threshold_d2_a005,592,0,16514,100,3.460774
+realistic_2pct,threshold_d2_a010,620,1,16369,99.838969,3.64942
+stress_20pct,migration_disabled,0,0,176596,-1,0
+stress_20pct,t28_default,624,0,175536,100,0.354223
+stress_20pct,threshold_d2_a005,3759,0,169362,100,2.171314
+stress_20pct,threshold_d2_a010,4239,1,168062,99.976415,2.460229

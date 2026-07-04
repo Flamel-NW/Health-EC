@@ -1,0 +1,7 @@
+T3.6.4 aggressive migration strategy result audit
+STATUS=PASS
+input_policy=only T3.6.4 white-listed formal raw artifacts
+read_bypass_coverage_is_not_migration_recall=TRUE
+observed_zero_fp_is_not_universal_guarantee=TRUE
+migration_io_not_charged_to_read_latency=TRUE
+aggressive_strategy_summary_rows=6

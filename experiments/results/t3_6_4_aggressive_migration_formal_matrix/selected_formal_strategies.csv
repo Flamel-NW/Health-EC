@@ -1,0 +1,5 @@
+strategy_id,strategy_kind,theta_D,alpha_D,evidence_windows,top_k_per_window,cooldown_windows,purpose
+t28_default,default,12,0.05,0,0,0,current default baseline
+migration_disabled,disabled,12,0.05,0,0,0,read-bypass-only baseline
+threshold_d2_a010,threshold_alpha,2,0.1,0,0,0,"low threshold, faster accumulation"
+threshold_d2_a005,threshold_alpha,2,0.05,0,0,0,low threshold

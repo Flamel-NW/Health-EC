@@ -1,0 +1,20 @@
+STATUS=PASS
+T3.6.4 aggressive migration formal matrix PASS
+scenario_manifest_rows=3
+strategy_manifest_rows=20
+health_strategy_rows=4
+num_seeds=30
+aggregate_rows=630
+expected_aggregate_rows=630
+windowed_rows=12600
+expected_windowed_rows=12600
+migration_trace_files=360
+migration_cost_rows=360
+build_target=PASS
+ctest=PASS
+schema=PASS
+static_canonical_csv=PASS
+read_bypass_coverage_is_not_migration_recall=TRUE
+observed_zero_fp_is_not_universal_guarantee=TRUE
+t3_6_3_smoke_gate=PASS
+artifact_provenance=/root/workspace/Health-EC-workspace/Health-EC/experiments/results/t3_6_4_aggressive_migration_formal_matrix/artifact_provenance.txt

@@ -1,0 +1,7 @@
+STATUS=PASS
+T3.6.4 aggressive migration aggregation PASS
+summary_by_scenario_strategy_policy_rows=21
+formal_validation_gate=PASS
+formal_provenance_gate=PASS
+read_bypass_coverage_is_not_migration_recall=TRUE
+aggregation_provenance=/root/workspace/Health-EC-workspace/Health-EC/experiments/results/t3_6_4_aggressive_migration_aggregation/aggregation_provenance.txt

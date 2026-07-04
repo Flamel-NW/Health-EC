@@ -1,0 +1,42 @@
+T3.6.4 aggressive migration formal matrix preflight
+
+$ git status --short --branch
+returncode=0
+[stdout]
+## dev...origin/dev
+?? experiments/results/t3_6_4_aggressive_migration_formal_matrix/
+
+$ git rev-parse HEAD
+returncode=0
+[stdout]
+81c41e3f2b2e8d1f9baa5c1c7e6963b0110de103
+
+$ git status --short --branch
+returncode=0
+[stdout]
+## master...origin/master
+?? scripts/lib/__pycache__/
+
+$ git rev-parse HEAD
+returncode=0
+[stdout]
+09a4d8f4e88649fa7ad309df4b079624acfaccab
+
+$ cat /proc/loadavg
+returncode=0
+[stdout]
+0.40 0.11 0.09 1/362 25
+
+$ free -h
+returncode=0
+[stdout]
+               total        used        free      shared  buff/cache   available
+Mem:            31Gi       1.5Gi        27Gi       1.1Mi       2.6Gi        29Gi
+Swap:             0B          0B          0B
+
+$ df -h /
+returncode=0
+[stdout]
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/root        48G   36G   12G  76% /
+
