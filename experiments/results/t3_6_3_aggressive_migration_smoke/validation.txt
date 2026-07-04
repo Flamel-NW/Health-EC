@@ -1,0 +1,21 @@
+STATUS=PASS
+T3.6.3 aggressive migration smoke PASS
+scenario_manifest_rows=3
+strategy_manifest_rows=20
+health_strategy_rows=20
+num_seeds=3
+aggregate_rows=207
+expected_aggregate_rows=207
+windowed_rows=4140
+expected_windowed_rows=4140
+migration_trace_files=180
+migration_cost_rows=180
+build_target=PASS
+ctest=PASS
+schema=PASS
+static_canonical_csv=PASS
+read_bypass_coverage_is_not_migration_recall=TRUE
+observed_zero_fp_is_not_universal_guarantee=TRUE
+smoke_strategy_gate_rows=54
+smoke_passing_strategy_rows=6
+artifact_provenance=/root/workspace/Health-EC-workspace/Health-EC/experiments/results/t3_6_3_aggressive_migration_smoke/artifact_provenance.txt

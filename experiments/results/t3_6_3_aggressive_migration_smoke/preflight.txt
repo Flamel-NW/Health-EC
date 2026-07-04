@@ -1,0 +1,43 @@
+T3.6.3 aggressive migration smoke preflight
+
+$ git status --short --branch
+returncode=0
+[stdout]
+## dev...origin/dev
+?? experiments/results/t3_6_3_aggressive_migration_smoke/
+
+$ git rev-parse HEAD
+returncode=0
+[stdout]
+3afba03c652de90af17e71c28a99de9910c0068e
+
+$ git status --short --branch
+returncode=0
+[stdout]
+## master...origin/master
+ M scripts/lib/migration_strategy_support.py
+?? scripts/lib/__pycache__/
+
+$ git rev-parse HEAD
+returncode=0
+[stdout]
+f67b1c1e2da7c63990e98b94f8126d699b072aa4
+
+$ cat /proc/loadavg
+returncode=0
+[stdout]
+0.54 0.24 0.13 1/286 24
+
+$ free -h
+returncode=0
+[stdout]
+               total        used        free      shared  buff/cache   available
+Mem:            31Gi       1.0Gi        29Gi       1.0Mi       1.2Gi        30Gi
+Swap:             0B          0B          0B
+
+$ df -h /
+returncode=0
+[stdout]
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/root        48G   36G   13G  75% /
+

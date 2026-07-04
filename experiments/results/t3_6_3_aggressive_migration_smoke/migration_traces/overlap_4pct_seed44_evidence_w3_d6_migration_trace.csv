@@ -1,0 +1,15 @@
+scenario,num_disks,seed,num_reads,num_stripes,zipf_s,policy,timeout_ms,read_index,window_id,stripe_id,shard_id,source_disk,target_disk,is_migration_positive,event_id,disk_state
+dynamic_overlap_100d_4pct_hdd,100,44,1000000,5000,1.0,health_ec,15.0,250064,5,16,96,96,83,1,1,mild_slow
+dynamic_overlap_100d_4pct_hdd,100,44,1000000,5000,1.0,health_ec,15.0,250204,5,16,97,97,26,1,6,mild_slow
+dynamic_overlap_100d_4pct_hdd,100,44,1000000,5000,1.0,health_ec,15.0,254771,5,49,296,96,12,1,1,mild_slow
+dynamic_overlap_100d_4pct_hdd,100,44,1000000,5000,1.0,health_ec,15.0,304092,6,66,396,96,8,1,2,severe_slow
+dynamic_overlap_100d_4pct_hdd,100,44,1000000,5000,1.0,health_ec,15.0,350083,7,49,297,97,93,1,6,mild_slow
+dynamic_overlap_100d_4pct_hdd,100,44,1000000,5000,1.0,health_ec,15.0,381418,7,66,397,97,68,1,6,mild_slow
+dynamic_overlap_100d_4pct_hdd,100,44,1000000,5000,1.0,health_ec,15.0,500008,10,16,98,98,52,1,11,mild_slow
+dynamic_overlap_100d_4pct_hdd,100,44,1000000,5000,1.0,health_ec,15.0,500172,10,33,198,98,57,1,11,mild_slow
+dynamic_overlap_100d_4pct_hdd,100,44,1000000,5000,1.0,health_ec,15.0,552269,11,66,398,98,52,1,12,severe_slow
+dynamic_overlap_100d_4pct_hdd,100,44,1000000,5000,1.0,health_ec,15.0,561064,11,83,498,98,89,1,12,severe_slow
+dynamic_overlap_100d_4pct_hdd,100,44,1000000,5000,1.0,health_ec,15.0,650042,13,33,199,99,29,1,16,mild_slow
+dynamic_overlap_100d_4pct_hdd,100,44,1000000,5000,1.0,health_ec,15.0,650222,13,16,99,99,21,1,16,mild_slow
+dynamic_overlap_100d_4pct_hdd,100,44,1000000,5000,1.0,health_ec,15.0,668323,13,66,399,99,84,1,16,mild_slow
+dynamic_overlap_100d_4pct_hdd,100,44,1000000,5000,1.0,health_ec,15.0,717839,14,83,499,99,68,1,17,severe_slow

@@ -1,0 +1,9 @@
+scenario,num_disks,seed,num_reads,num_stripes,zipf_s,policy,timeout_ms,read_index,window_id,stripe_id,shard_id,source_disk,target_disk,is_migration_positive,event_id,disk_state
+dynamic_realistic_100d_2pct_hdd,100,44,1000000,5000,1.0,health_ec,15.0,151515,3,16,98,98,90,1,1,mild_slow
+dynamic_realistic_100d_2pct_hdd,100,44,1000000,5000,1.0,health_ec,15.0,165266,3,33,198,98,12,1,1,mild_slow
+dynamic_realistic_100d_2pct_hdd,100,44,1000000,5000,1.0,health_ec,15.0,285228,5,66,398,98,7,1,1,mild_slow
+dynamic_realistic_100d_2pct_hdd,100,44,1000000,5000,1.0,health_ec,15.0,340057,6,83,498,98,12,1,2,severe_slow
+dynamic_realistic_100d_2pct_hdd,100,44,1000000,5000,1.0,health_ec,15.0,452260,9,16,99,99,72,1,9,mild_slow
+dynamic_realistic_100d_2pct_hdd,100,44,1000000,5000,1.0,health_ec,15.0,462180,9,33,199,99,58,1,9,mild_slow
+dynamic_realistic_100d_2pct_hdd,100,44,1000000,5000,1.0,health_ec,15.0,557419,11,66,399,99,4,1,10,severe_slow
+dynamic_realistic_100d_2pct_hdd,100,44,1000000,5000,1.0,health_ec,15.0,582274,11,83,499,99,50,1,10,severe_slow
