@@ -1,0 +1,217 @@
+{
+  "scenes": {
+    "realistic_2pct": "dynamic_realistic_100d_2pct_hdd",
+    "overlap_4pct": "dynamic_overlap_100d_4pct_hdd",
+    "stress_20pct": "dynamic_stress_100d_20pct_hdd"
+  },
+  "policies": [
+    "health_ec",
+    "vanilla_ec"
+  ],
+  "splits": {
+    "train": [
+      2001,
+      2002,
+      2003,
+      2004,
+      2005,
+      2006,
+      2007,
+      2008,
+      2009,
+      2010
+    ],
+    "validation": [
+      1001,
+      1002,
+      1003,
+      1004,
+      1005,
+      1006,
+      1007,
+      1008,
+      1009,
+      1010
+    ],
+    "test": [
+      42,
+      43,
+      44,
+      45,
+      46,
+      47,
+      48,
+      49,
+      50,
+      51,
+      52,
+      53,
+      54,
+      55,
+      56,
+      57,
+      58,
+      59,
+      60,
+      61,
+      62,
+      63,
+      64,
+      65,
+      66,
+      67,
+      68,
+      69,
+      70,
+      71
+    ]
+  },
+  "candidates": [
+    {
+      "family": "constant",
+      "quantile": 0.95,
+      "bins": 3,
+      "rho": 0.6
+    },
+    {
+      "family": "constant",
+      "quantile": 0.95,
+      "bins": 3,
+      "rho": 0.8
+    },
+    {
+      "family": "constant",
+      "quantile": 0.95,
+      "bins": 5,
+      "rho": 0.6
+    },
+    {
+      "family": "constant",
+      "quantile": 0.95,
+      "bins": 5,
+      "rho": 0.8
+    },
+    {
+      "family": "constant",
+      "quantile": 0.99,
+      "bins": 3,
+      "rho": 0.6
+    },
+    {
+      "family": "constant",
+      "quantile": 0.99,
+      "bins": 3,
+      "rho": 0.8
+    },
+    {
+      "family": "constant",
+      "quantile": 0.99,
+      "bins": 5,
+      "rho": 0.6
+    },
+    {
+      "family": "constant",
+      "quantile": 0.99,
+      "bins": 5,
+      "rho": 0.8
+    },
+    {
+      "family": "constant",
+      "quantile": 0.999,
+      "bins": 3,
+      "rho": 0.6
+    },
+    {
+      "family": "constant",
+      "quantile": 0.999,
+      "bins": 3,
+      "rho": 0.8
+    },
+    {
+      "family": "constant",
+      "quantile": 0.999,
+      "bins": 5,
+      "rho": 0.6
+    },
+    {
+      "family": "constant",
+      "quantile": 0.999,
+      "bins": 5,
+      "rho": 0.8
+    },
+    {
+      "family": "loglinear",
+      "quantile": 0.95,
+      "bins": 3,
+      "rho": 0.6
+    },
+    {
+      "family": "loglinear",
+      "quantile": 0.95,
+      "bins": 3,
+      "rho": 0.8
+    },
+    {
+      "family": "loglinear",
+      "quantile": 0.95,
+      "bins": 5,
+      "rho": 0.6
+    },
+    {
+      "family": "loglinear",
+      "quantile": 0.95,
+      "bins": 5,
+      "rho": 0.8
+    },
+    {
+      "family": "loglinear",
+      "quantile": 0.99,
+      "bins": 3,
+      "rho": 0.6
+    },
+    {
+      "family": "loglinear",
+      "quantile": 0.99,
+      "bins": 3,
+      "rho": 0.8
+    },
+    {
+      "family": "loglinear",
+      "quantile": 0.99,
+      "bins": 5,
+      "rho": 0.6
+    },
+    {
+      "family": "loglinear",
+      "quantile": 0.99,
+      "bins": 5,
+      "rho": 0.8
+    },
+    {
+      "family": "loglinear",
+      "quantile": 0.999,
+      "bins": 3,
+      "rho": 0.6
+    },
+    {
+      "family": "loglinear",
+      "quantile": 0.999,
+      "bins": 3,
+      "rho": 0.8
+    },
+    {
+      "family": "loglinear",
+      "quantile": 0.999,
+      "bins": 5,
+      "rho": 0.6
+    },
+    {
+      "family": "loglinear",
+      "quantile": 0.999,
+      "bins": 5,
+      "rho": 0.8
+    }
+  ],
+  "bin_reads": 10000,
+  "detector_only": true
+}

@@ -72,3 +72,10 @@ add_test(
             ${CMAKE_CURRENT_SOURCE_DIR}/tools/validate_compare_policies_contract.py
             $<TARGET_FILE:compare_policies>
 )
+
+add_test(
+    NAME compare_policies_disk_trace_contract
+    COMMAND ${Python3_EXECUTABLE}
+            ${CMAKE_CURRENT_SOURCE_DIR}/tools/validate_disk_trace_contract.py
+            $<TARGET_FILE:compare_policies>
+)

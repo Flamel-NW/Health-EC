@@ -1,0 +1,4 @@
+STATUS=PASS
+scenarios=3
+num_reads=1000000
+comparison=pre_change_reference_vs_observations

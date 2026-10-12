@@ -1,0 +1,7 @@
+scene,policy,d12_recall,maximum_possible_recall_gain,required_gain,gain_gate_feasible
+realistic_2pct,health_ec,0.9616666666666667,0.03833333333333333,0.1,0
+realistic_2pct,vanilla_ec,0.0,1.0,0,1
+overlap_4pct,health_ec,0.9785185185185186,0.021481481481481435,0.1,0
+overlap_4pct,vanilla_ec,0.0,1.0,0,1
+stress_20pct,health_ec,0.32183333333333336,0.6781666666666666,0.1,1
+stress_20pct,vanilla_ec,0.0,1.0,0,1

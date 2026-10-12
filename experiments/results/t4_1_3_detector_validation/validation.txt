@@ -1,0 +1,10 @@
+STATUS=PASS
+build_ctest_static=PASS
+schema_schedule_coverage_conservation=PASS
+label_blind_fit_and_decisions=PASS
+seed_splits_disjoint=PASS
+raw_trace_files=300
+raw_trace_rows=3000000
+migration_diagnostic_files=90
+migration_diagnostic_rows=900000
+decision=NO_GO_DIAGNOSE

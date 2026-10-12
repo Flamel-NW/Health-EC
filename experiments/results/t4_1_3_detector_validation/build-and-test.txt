@@ -1,0 +1,59 @@
+-- Configuring done (0.1s)
+-- Generating done (0.0s)
+-- Build files have been written to: /root/workspace/Health-EC-workspace/Health-EC/build
+
+[  6%] Built target healthec_ec
+[ 21%] Built target healthec_core
+[ 28%] Built target test_jerasure_wrapper
+[ 34%] Built target test_score_manager
+[ 43%] Built target healthec_sim
+[ 50%] Built target test_read_scheduler
+[ 56%] Built target test_loser_significance
+[ 62%] Built target test_disk_simulator
+[ 68%] Built target healthec_demo
+[ 75%] Built target test_migration_scheduler
+[ 81%] Built target test_integration
+[ 87%] Built target calibrate_params
+[ 93%] Built target calibrate_thresholds
+[100%] Built target compare_policies
+
+Test project /root/workspace/Health-EC-workspace/Health-EC/build
+      Start  1: jerasure_wrapper
+ 1/13 Test  #1: jerasure_wrapper .............................   Passed    0.00 sec
+      Start  2: score_manager
+ 2/13 Test  #2: score_manager ................................   Passed    0.00 sec
+      Start  3: read_scheduler
+ 3/13 Test  #3: read_scheduler ...............................   Passed    0.21 sec
+      Start  4: disk_simulator
+ 4/13 Test  #4: disk_simulator ...............................   Passed    0.22 sec
+      Start  5: migration_scheduler
+ 5/13 Test  #5: migration_scheduler ..........................   Passed    0.03 sec
+      Start  6: integration
+ 6/13 Test  #6: integration ..................................   Passed    0.15 sec
+      Start  7: loser_significance
+ 7/13 Test  #7: loser_significance ...........................   Passed    0.00 sec
+      Start  8: compare_policies_dynamic_csv
+ 8/13 Test  #8: compare_policies_dynamic_csv .................   Passed    0.20 sec
+      Start  9: compare_policies_dynamic_windowed_csv
+ 9/13 Test  #9: compare_policies_dynamic_windowed_csv ........   Passed    0.19 sec
+      Start 10: compare_policies_dynamic_event_trace
+10/13 Test #10: compare_policies_dynamic_event_trace .........   Passed    0.00 sec
+      Start 11: compare_policies_dynamic_invalid_num_reads
+11/13 Test #11: compare_policies_dynamic_invalid_num_reads ...   Passed    0.00 sec
+      Start 12: compare_policies_dynamic_contract
+12/13 Test #12: compare_policies_dynamic_contract ............   Passed    3.60 sec
+      Start 13: compare_policies_disk_trace_contract
+13/13 Test #13: compare_policies_disk_trace_contract .........   Passed    0.62 sec
+
+100% tests passed, 0 tests failed out of 13
+
+Total Test time (real) =   5.25 sec
+
+......................
+----------------------------------------------------------------------
+Ran 22 tests in 0.194s
+
+OK
+
+
+pre-change runner complete CSV equality: static + three dynamic scenarios PASS

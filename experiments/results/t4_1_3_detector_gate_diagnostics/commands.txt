@@ -1,0 +1,1 @@
+WORKFLOW_ROOT: PYTHONDONTWRITEBYTECODE=1 python3 scripts/tmp/diagnose_detector_gates.py

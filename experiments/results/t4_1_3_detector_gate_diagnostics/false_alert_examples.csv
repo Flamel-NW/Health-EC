@@ -1,0 +1,15 @@
+scene,policy,seed,disk_id,bin,sr,rho,recent_truth
+realistic_2pct,health_ec,1002,35,9,1.0139862823219967,0.6,healthy|healthy
+realistic_2pct,health_ec,1002,35,10,0.9349560085698012,0.6,healthy|healthy
+realistic_2pct,vanilla_ec,1002,35,9,1.0139258041074837,0.6,healthy|healthy
+realistic_2pct,vanilla_ec,1002,35,10,0.934898863880876,0.6,healthy|healthy
+overlap_4pct,health_ec,1002,35,9,1.013563990267536,0.6,healthy|healthy
+overlap_4pct,health_ec,1002,35,10,0.9345567908845207,0.6,healthy|healthy
+overlap_4pct,vanilla_ec,1002,35,9,1.0135633662085581,0.6,healthy|healthy
+overlap_4pct,vanilla_ec,1002,35,10,0.9345561350939893,0.6,healthy|healthy
+stress_20pct,health_ec,1002,35,9,1.0114170879663145,0.6,healthy|healthy
+stress_20pct,health_ec,1002,35,10,0.9325272689586565,0.6,healthy|healthy
+stress_20pct,health_ec,1010,84,81,1.0124661883905293,0.6,recovery|healthy
+stress_20pct,vanilla_ec,1002,35,9,1.0115440647286553,0.6,healthy|healthy
+stress_20pct,vanilla_ec,1002,35,10,0.9326474631780296,0.6,healthy|healthy
+stress_20pct,vanilla_ec,1010,84,81,1.013071722380877,0.6,recovery|healthy

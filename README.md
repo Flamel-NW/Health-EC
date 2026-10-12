@@ -55,6 +55,27 @@ PASS [erase_2_parity]
 All tests passed.
 ```
 
+## Simulation traces
+
+For passive per-disk observations from the dynamic simulation:
+
+```bash
+build/experiments/compare_policies \
+  --scenario dynamic_realistic_100d_2pct_hdd \
+  --num-reads 1000000 --num-stripes 5000 --seed 42 \
+  --policy health_ec --health-migration-strategy disabled \
+  --format disk_trace --detector-bin-reads 10000 > disk_trace.csv
+```
+
+Each row reports one disk/request-index bin: actual issued data/parity reads,
+mean simulated latency, end-of-bin maximum shard S/D scores, and validation
+labels. Bins must divide the schedule window size. An empty latency means no
+reads were issued. Observations do not change policy decisions; ground-truth
+and bypass labels are for offline validation. `validation_bypass_*` counts
+positive data-shard exposures, which can exceed request counts when a request
+contains multiple slow shards. The simulator has no latency/queue-pressure
+coupling and exposes full issued-read latency without cancellation censoring.
+
 ## Directory layout
 
 ```

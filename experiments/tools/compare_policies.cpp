@@ -344,6 +344,7 @@ enum class OutputFormat {
     WindowedCsv,
     EventTrace,
     MigrationTrace,
+    DiskTrace,
 };
 
 struct MigrationStrategyConfig {
@@ -368,6 +369,7 @@ struct RuntimeConfig {
     MigrationStrategyConfig migration_strategy;
     OutputFormat format = OutputFormat::Table;
     bool extended_metrics = false;
+    int detector_bin_reads = 10000;
 };
 
 struct PolicyConfig {
@@ -553,9 +555,13 @@ static RuntimeConfig parse_args(int argc, char** argv) {
                 cfg.format = OutputFormat::EventTrace;
             } else if (value == "migration_trace") {
                 cfg.format = OutputFormat::MigrationTrace;
+            } else if (value == "disk_trace") {
+                cfg.format = OutputFormat::DiskTrace;
             } else {
                 throw std::invalid_argument("invalid --format: " + value);
             }
+        } else if (arg == "--detector-bin-reads") {
+            cfg.detector_bin_reads = parse_positive_int(require_value(arg), arg);
         } else if (arg == "--extended-metrics") {
             cfg.extended_metrics = true;
         } else {
@@ -578,9 +584,16 @@ static void validate_runtime_config(const RuntimeConfig& cfg) {
     if (!is_dynamic_scenario(cfg) &&
         (cfg.format == OutputFormat::WindowedCsv ||
          cfg.format == OutputFormat::EventTrace ||
-         cfg.format == OutputFormat::MigrationTrace)) {
+         cfg.format == OutputFormat::MigrationTrace ||
+         cfg.format == OutputFormat::DiskTrace)) {
         throw std::invalid_argument(
             "windowed_csv, event_trace, and migration_trace require a dynamic scenario");
+    }
+    if (cfg.format == OutputFormat::DiskTrace &&
+        (cfg.num_reads % cfg.detector_bin_reads != 0 ||
+         (cfg.num_reads / DYNAMIC_NUM_WINDOWS) % cfg.detector_bin_reads != 0)) {
+        throw std::invalid_argument(
+            "disk_trace bin must divide the schedule window size");
     }
     if (is_dynamic_scenario(cfg) && cfg.num_reads % DYNAMIC_NUM_WINDOWS != 0) {
         throw std::invalid_argument(
@@ -929,6 +942,24 @@ struct MigrationTraceRow {
     DiskState disk_state = DiskState::Healthy;
 };
 
+// Passive observations. Schedule labels and score aggregates are exported for
+// validation only; the offline detector never participates in policy decisions.
+struct DiskObservation {
+    long read_count = 0;
+    long data_read_count = 0;
+    long parity_read_count = 0;
+    double latency_sum_ms = 0.0;
+    long proactive_data_reads = 0;
+    long s_above_reads = 0;
+    long d_above_reads = 0;
+    long significant_loser_count = 0;
+    long parity_win_count = 0;
+    long validation_bypass_eligible = 0;
+    long validation_bypass_triggered = 0;
+    double max_s = 0.0;
+    double max_d = 0.0;
+};
+
 struct DynamicRunResult {
     RunResult aggregate;
     std::vector<double> aggregate_latencies;
@@ -947,6 +978,8 @@ struct DynamicRunResult {
     long read_bypass_eligible_events = NOT_APPLICABLE;
     long read_bypass_triggered_events = NOT_APPLICABLE;
     std::vector<MigrationTraceRow> migration_trace;
+    int detector_bin_reads = 0;
+    std::vector<std::vector<DiskObservation>> disk_observations;
 };
 
 struct EventShardStats {
@@ -1825,7 +1858,8 @@ static void finalize_dynamic_result(DynamicRunResult& result,
 
 static DynamicRunResult run_dynamic_policy(const LatentWorld& world,
                                            const Layout& layout,
-                                           const PolicyConfig& config)
+                                           const PolicyConfig& config,
+                                           int detector_bin_reads = 0)
 {
     std::unordered_map<ShardId, ScoreState> scores;
     std::unordered_map<ShardId, DiskId> logical_disk = initial_logical_disks(layout);
@@ -1837,6 +1871,35 @@ static DynamicRunResult run_dynamic_policy(const LatentWorld& world,
     std::unordered_map<ShardId, PendingMigrationCandidate> queued_migrations;
 
     DynamicRunResult result;
+    result.detector_bin_reads = detector_bin_reads;
+    if (detector_bin_reads > 0) {
+        result.disk_observations.resize(
+            world.requests.size() / detector_bin_reads,
+            std::vector<DiskObservation>(world.num_disks));
+    }
+    auto observation = [&](const LatentRequest& req, DiskId disk)
+        -> DiskObservation& {
+        return result.disk_observations.at(req.read_index / detector_bin_reads)
+            .at(disk);
+    };
+    auto observe_read = [&](const LatentRequest& req, DiskId disk,
+                            double latency, bool parity) {
+        if (detector_bin_reads == 0) return;
+        auto& obs = observation(req, disk);
+        obs.read_count++;
+        obs.latency_sum_ms += latency;
+        if (parity) obs.parity_read_count++;
+        else obs.data_read_count++;
+    };
+    auto snapshot_scores = [&](int bin) {
+        if (detector_bin_reads == 0 || bin < 0) return;
+        for (const auto& [sh, score] : scores) {
+            auto& obs = result.disk_observations.at(bin).at(logical_disk.at(sh));
+            obs.max_s = std::max(obs.max_s, score.S);
+            obs.max_d = std::max(obs.max_d, score.D);
+        }
+    };
+    int current_detector_bin = -1;
     result.windows = make_dynamic_windows(world);
     result.aggregate_latencies.reserve(world.requests.size());
     if (config.kind != PolicyKind::HealthEC) {
@@ -1852,6 +1915,11 @@ static DynamicRunResult run_dynamic_policy(const LatentWorld& world,
     int current_window = -1;
 
     for (const auto& req : world.requests) {
+        if (detector_bin_reads > 0 &&
+            req.read_index / detector_bin_reads != current_detector_bin) {
+            snapshot_scores(current_detector_bin);
+            current_detector_bin = req.read_index / detector_bin_reads;
+        }
         if (config.kind == PolicyKind::HealthEC &&
             migration_strategy_uses_topk(config.migration_strategy) &&
             req.window_id != current_window) {
@@ -1871,6 +1939,9 @@ static DynamicRunResult run_dynamic_policy(const LatentWorld& world,
             record_positive_event_reads(world, req, logical_disk, event_stats);
 
         auto data_lat = latent_data_latencies(world, req, logical_disk);
+        for (const auto& [sh, lat] : data_lat) {
+            observe_read(req, logical_disk.at(sh), lat, false);
+        }
         const LatentShard& parity = select_parity_for_dynamic_read(
             req, logical_disk, disk_health, config.kind == PolicyKind::HealthEC);
         ShardId parity_shard = parity.shard;
@@ -1889,6 +1960,17 @@ static DynamicRunResult run_dynamic_policy(const LatentWorld& world,
                 world, req, logical_disk, parity_shard, parity_lat, data_lat);
             if (read_bypass_eligible)
                 result.read_bypass_eligible_events++;
+            if (detector_bin_reads > 0) {
+                for (const auto& sh : req.data) {
+                    DiskId disk = logical_disk_for(logical_disk, sh);
+                    auto& obs = observation(req, disk);
+                    if (scores[sh.shard].S > config.health_ec_params.theta_S)
+                        obs.s_above_reads++;
+                    if (read_bypass_eligible && is_migration_positive(
+                            state_for_disk_window(world.schedule, disk, req.window_id)))
+                        obs.validation_bypass_eligible++;
+                }
+            }
         }
 
         if (config.kind == PolicyKind::VanillaEC) {
@@ -1903,6 +1985,7 @@ static DynamicRunResult run_dynamic_policy(const LatentWorld& world,
 
         if (config.kind == PolicyKind::LateBinding) {
             record_extra_parity_read(result, world, req, logical_disk);
+            observe_read(req, parity_disk, parity_lat, true);
             auto all = sorted_with_parity(data_lat, parity_shard, parity_lat);
 
             bool parity_in_k = false;
@@ -1945,6 +2028,7 @@ static DynamicRunResult run_dynamic_policy(const LatentWorld& world,
             }
 
             record_extra_parity_read(result, world, req, logical_disk);
+            observe_read(req, parity_disk, parity_lat, true);
             if (req.read_index >= first_onset_read &&
                 request_has_positive_data(world, req, logical_disk) &&
                 result.first_detection_latency_reads < 0) {
@@ -1991,6 +2075,8 @@ static DynamicRunResult run_dynamic_policy(const LatentWorld& world,
 
             auto loser = compute_loser_significant(data_lat, p.loser_sig_ratio,
                                                    p.loser_sig_abs_ms);
+            if (detector_bin_reads > 0 && loser)
+                observation(req, logical_disk.at(*loser)).significant_loser_count++;
             for (const auto& [sh, lat] : data_lat) {
                 (void)lat;
                 double ev = (loser && sh == *loser) ? 1.0 : 0.0;
@@ -2001,6 +2087,17 @@ static DynamicRunResult run_dynamic_policy(const LatentWorld& world,
         }
 
         record_extra_parity_read(result, world, req, logical_disk);
+        observe_read(req, parity_disk, parity_lat, true);
+        if (detector_bin_reads > 0) {
+            for (const auto& sh : req.data) {
+                DiskId disk = logical_disk_for(logical_disk, sh);
+                auto& obs = observation(req, disk);
+                obs.proactive_data_reads++;
+                if (read_bypass_eligible && is_migration_positive(
+                        state_for_disk_window(world.schedule, disk, req.window_id)))
+                    obs.validation_bypass_triggered++;
+            }
+        }
         if (read_bypass_eligible)
             result.read_bypass_triggered_events++;
         update_observed_health(disk_health, parity_disk, parity_lat, p);
@@ -2040,6 +2137,11 @@ static DynamicRunResult run_dynamic_policy(const LatentWorld& world,
             auto& st = scores[sh];
             st.S = (1.0 - p.alpha_S) * st.S + p.alpha_S * req.hotness * win;
             st.D = (1.0 - p.alpha_D) * st.D + p.alpha_D * req.hotness * win;
+            if (detector_bin_reads > 0) {
+                auto& obs = observation(req, logical_disk.at(sh));
+                if (win > 0.0) obs.parity_win_count++;
+                if (st.D > p.theta_D) obs.d_above_reads++;
+            }
 
             if (win > 0.0)
                 record_migration_evidence(migration_evidence, sh, req.window_id);
@@ -2065,6 +2167,7 @@ static DynamicRunResult run_dynamic_policy(const LatentWorld& world,
         }
     }
 
+    snapshot_scores(current_detector_bin);
     if (config.kind == PolicyKind::HealthEC)
         finalize_migration_truth(result, event_stats);
 
@@ -2353,6 +2456,49 @@ static void print_migration_trace_rows(const RuntimeConfig& runtime,
 
 // main.
 
+static void print_disk_trace(const RuntimeConfig& runtime,
+                             const LatentWorld& world,
+                             const std::vector<PolicyConfig>& configs,
+                             const std::vector<DynamicRunResult>& results) {
+    std::cout << "scenario,seed,policy,disk_id,detector_window,window_start_read,"
+        "window_end_read,read_count,data_read_count,parity_read_count,read_bytes,"
+        "observed_latency_ms,pressure_proxy,ground_truth_state,proactive_data_reads,"
+        "s_above_reads,d_above_reads,significant_loser_count,parity_win_count,"
+        "validation_bypass_eligible,validation_bypass_triggered,max_s,max_d,"
+        "migration_count\n";
+    std::cout << std::setprecision(12);
+    for (std::size_t p = 0; p < configs.size(); ++p) {
+        const auto& result = results.at(p);
+        std::vector<std::vector<long>> migration_counts(
+            result.disk_observations.size(), std::vector<long>(world.num_disks, 0));
+        for (const auto& migration : result.migration_trace)
+            migration_counts.at(migration.read_index / runtime.detector_bin_reads)
+                .at(migration.source_disk)++;
+        for (std::size_t bin = 0; bin < result.disk_observations.size(); ++bin) {
+            int start = static_cast<int>(bin) * runtime.detector_bin_reads;
+            int schedule_window = start / world.window_size;
+            for (DiskId disk = 0; disk < world.num_disks; ++disk) {
+                const auto& obs = result.disk_observations.at(bin).at(disk);
+                std::cout << runtime.scenario << ',' << runtime.seed << ','
+                    << policy_name(configs[p].kind) << ',' << disk << ',' << bin << ','
+                    << start << ',' << start + runtime.detector_bin_reads << ','
+                    << obs.read_count << ',' << obs.data_read_count << ','
+                    << obs.parity_read_count << ',' << obs.read_count * 4096 << ',';
+                if (obs.read_count > 0)
+                    std::cout << obs.latency_sum_ms / obs.read_count;
+                std::cout << ',' << obs.read_count << ','
+                    << disk_state_name(state_for_disk_window(
+                        world.schedule, disk, schedule_window)) << ','
+                    << obs.proactive_data_reads << ',' << obs.s_above_reads << ','
+                    << obs.d_above_reads << ',' << obs.significant_loser_count << ','
+                    << obs.parity_win_count << ',' << obs.validation_bypass_eligible << ','
+                    << obs.validation_bypass_triggered << ',' << obs.max_s << ','
+                    << obs.max_d << ',' << migration_counts.at(bin).at(disk) << '\n';
+            }
+        }
+    }
+}
+
 int main(int argc, char** argv) {
     RuntimeConfig runtime;
     try {
@@ -2388,7 +2534,16 @@ int main(int argc, char** argv) {
 
         for (PolicyKind kind : policies) {
             configs.push_back(make_policy_config(kind, runtime, health_params));
-            results.push_back(run_dynamic_policy(world, layout, configs.back()));
+            results.push_back(run_dynamic_policy(
+                world, layout, configs.back(),
+                runtime.format == OutputFormat::DiskTrace
+                    ? runtime.detector_bin_reads : 0));
+        }
+
+        if (runtime.format == OutputFormat::DiskTrace) {
+            print_disk_trace(runtime, world, configs, results);
+            std::filesystem::remove_all(TMP);
+            return 0;
         }
 
         double vanilla_p99 = 0.0;

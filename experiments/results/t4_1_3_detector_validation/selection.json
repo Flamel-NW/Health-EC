@@ -1,0 +1,11 @@
+{
+  "candidate": 0,
+  "family": "constant",
+  "quantile": 0.95,
+  "bins": 3,
+  "rho": 0.6,
+  "validation_pass": false,
+  "eligible_candidates": [],
+  "locked_at": "2026-10-12T06:33:02.610341+00:00",
+  "test_used_for_selection": false
+}

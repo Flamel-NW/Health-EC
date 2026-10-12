@@ -1,0 +1,65 @@
+diff --git a/design/perseus-health-ec-mapping.md b/design/perseus-health-ec-mapping.md
+index 08acb96..95f12df 100644
+--- a/design/perseus-health-ec-mapping.md
++++ b/design/perseus-health-ec-mapping.md
+@@ -182,6 +182,12 @@ Implications:
+ 
+ ## Detector Trace Contract For T4.1.3
+ 
++2026-10-12 implementation extension: [validation protocol](../evaluation/t4_1_3_detector_validation_protocol.md)
++uses request-index bins (10000 requests), records only issued reads and bin-end
++shard score aggregates, and evaluates offline. Raw trace may include validation-only
++schedule/bypass labels, but detector fitting and decisions receive only read count
++and observed mean latency. No detector signal enters policy decisions.
++
+ T4.1.3 should produce or derive a detector trace with one row per
+ `scenario, seed, disk_id, detector_window`:
+ 
+diff --git a/evaluation/compare-policies-cli-contract.md b/evaluation/compare-policies-cli-contract.md
+index 11ce8a0..134fdd9 100644
+--- a/evaluation/compare-policies-cli-contract.md
++++ b/evaluation/compare-policies-cli-contract.md
+@@ -18,7 +18,8 @@
+ | --health-migration-strategy | default、disabled、threshold_alpha、window_evidence、topk_budgeted、hybrid | default 兼容既有行为 |
+ | --health-alpha-d | positive finite 且小于 alpha_S | D EMA |
+ | --health-migration-evidence-windows／--health-migration-top-k-per-window／--health-migration-cooldown-windows | nonnegative integers | strategy guards／budget |
+-| --format | table、csv、windowed_csv、event_trace、migration_trace；table | 输出选择 |
++| --format | table、csv、windowed_csv、event_trace、migration_trace、disk_trace；table | 输出选择 |
++| --detector-bin-reads | positive integer；10000 | disk_trace bin；须整除 schedule window size |
+ | --extended-metrics | flag | 仅 dynamic csv；加入 post-warmup、severe-window 与 bypass 字段 |
+ 
+ | Scenario family | disks／正式 workload | 专项来源 |
+@@ -34,6 +35,7 @@
+ 
+ - 无参数仍是 static canonical；不会自动选择 100-disk T3。Health-EC 参数默认采用 [current-config](current-config.md)，库占位值是另一层接口。
+ - dynamic reads 须整除20；windowed 每 policy 20行。event_trace 为 schedule，独立于 policy；migration_trace 仅 dynamic health_ec，记录真实成功的模拟迁移。
++- disk_trace 为被动 per-policy/disk/bin 观测，统计实际 issued data/parity reads、mean latency、bin-end max S/D及验证字段；零样本 mean 为空。observations 不反馈策略。检测器不读取 ground-truth / bypass labels。精确字段与守恒由独立 disk trace contract test 验证。
+ - static 不接受 windowed/event/migration trace；extended-metrics 不用于 static 或非 csv。
+ - static CSV 保留其固定 header；dynamic aggregate 包括 num_disks、窗口、恢复与迁移诊断，extended flag 追加5字段。各 schema 的精确列顺序由 contract test 与脚本常量核对，不在多个文档复制长 header。
+ - 单 policy 只打印所选行；all 的 policy 顺序固定。table 有描述 header，CSV 无装饰文本；数值精度按 runner 现行输出保留。
+diff --git a/evaluation/evaluation.md b/evaluation/evaluation.md
+index b44575c..1d7d228 100644
+--- a/evaluation/evaluation.md
++++ b/evaluation/evaluation.md
+@@ -8,6 +8,7 @@
+ | [evidence-catalog.md](evidence-catalog.md) | 维护中的目录 | campaign 资格与历史解释 | 选择或回溯证据 |
+ | [params.md](params.md) | 维护中的规格 | T2.2 推导／历史标定 | 采样或热度推导 |
+ | [protocol.md](protocol.md) | 维护中的规格 | 通用实验与环境边界 | 实验前／报告前 |
++| [T4.1.3 protocol](t4_1_3_detector_validation_protocol.md) | 执行中的协议 | detector trace、拆分、候选、gate | T4 detector 验证 |
+ | [baseline-policy-interface.md](baseline-policy-interface.md) | 维护中的规格 | baseline 语义与模拟边界 | baseline 设计 |
+ | [compare-policies-cli-contract.md](compare-policies-cli-contract.md) | 维护中的规格 | 现行 CLI／输出接口 | 调用或修改 runner |
+ | [dynamic-degradation-scenario-contract.md](dynamic-degradation-scenario-contract.md) | 维护中的规格 | T2 动态 schedule／统计语义 | 动态 schedule／统计口径 |
+diff --git a/scripts/scripts.md b/scripts/scripts.md
+index ae6cc23..4486bd6 100644
+--- a/scripts/scripts.md
++++ b/scripts/scripts.md
+@@ -15,6 +15,9 @@
+ | [lib/sensitivity_support.py](lib/sensitivity_support.py) | T3.5 可复用 helper | case manifest、校验、采集／聚合；非当前 wrapper 默认 | sensitivity 复用 |
+ | [lib/migration_strategy_support.py](lib/migration_strategy_support.py) | T3.6 共享 helper | strategy manifests、校验、cost 与 collection/aggregation | migration 实施 |
+ | [lib/artifact_validation.py](lib/artifact_validation.py) | 共享来源验证 | 解析两种 provenance；hash/size；只读验证 | artifact guards 修改 |
++| [validate_disk_detector.py](validate_disk_detector.py) | T4.1.3 detector validation | build/test、采集300个主trace与90个默认迁移诊断trace、离线校准/测试、写新result dir；拒绝非空目录 | T4 detector 实施 |
++| [lib/disk_detector.py](lib/disk_detector.py) | T4 label-blind detector与独立评估 | stdlib；只接收count/latency；无文件副作用 | detector/metrics 修改 |
++| [tests/test_disk_detector.py](tests/test_disk_detector.py) | 时序与标签边界验证 | unittest；无正式runner调用 | detector 语义变更 |
+ | [lib/__init__.py](lib/__init__.py) | 包入口 | 无执行副作用 | import 组织 |
+ | [tests/test_workflow_artifacts.py](tests/test_workflow_artifacts.py) | fixture 验证 | unittest／临时目录，不调用正式 runner | 修改来源或目录 guards |
+ 
