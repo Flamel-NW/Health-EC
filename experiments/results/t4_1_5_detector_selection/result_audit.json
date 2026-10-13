@@ -1,0 +1,7 @@
+{
+  "decision": "NO_GO_DIAGNOSE",
+  "mode": "select",
+  "research_gates_pass": false,
+  "robustness_pass": false,
+  "boundary": "semi-synthetic observation controls; frozen-policy single-read utility; no control integration"
+}

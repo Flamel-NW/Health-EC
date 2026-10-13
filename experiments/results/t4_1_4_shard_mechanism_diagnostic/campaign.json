@@ -1,0 +1,21 @@
+{
+  "task": "T4.1.4",
+  "mode": "mechanism_diagnostic_only",
+  "seeds": [
+    91004
+  ],
+  "reads": 1000000,
+  "stripes": 5000,
+  "scenes": {
+    "realistic_2pct": "dynamic_realistic_100d_2pct_hdd",
+    "overlap_4pct": "dynamic_overlap_100d_4pct_hdd",
+    "stress_20pct": "dynamic_stress_100d_20pct_hdd"
+  },
+  "strategies": [
+    "disabled",
+    "default"
+  ],
+  "parameter_selection": false,
+  "test_used": false,
+  "concurrent_work": "T4.1.4 smoke offline analysis; no wall-clock performance measurement"
+}

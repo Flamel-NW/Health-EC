@@ -1,0 +1,10 @@
+case,suspected_bins,confirmed_bins,first_suspected,first_confirmed,common_change_bins,total_confirmed
+quiet,0,0,,,0,0
+two_bin_nuisance,2,0,4,,0,0
+persistent_same_prefix,5,3,4,6,0,3
+affine_drift_and_20pct_local,5,3,4,6,500,60
+common_shared_delay,0,0,,,600,0
+short_fault_1,1,0,4,,0,0
+short_fault_2,2,0,4,,0,0
+short_fault_3,3,1,4,6,0,1
+short_fault_5,5,3,4,6,0,3

@@ -1,0 +1,8 @@
+{
+  "decision": "ENGINEERING_SMOKE_ONLY",
+  "mode": "smoke",
+  "research_gates_pass": false,
+  "formal_selection_created": false,
+  "formal_test_used": false,
+  "boundary": "relative disk anomalies; peer comparability/majority assumptions; semi-synthetic controls; no integration"
+}

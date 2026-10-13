@@ -1,0 +1,182 @@
+{
+  "mode": "smoke",
+  "kind": "verified_engineering_raw_replay",
+  "splits": {
+    "fit": [
+      93011
+    ],
+    "calibration": [
+      93012
+    ],
+    "validation": [
+      93013
+    ]
+  },
+  "candidates": [
+    {
+      "adaptation": "frozen",
+      "calibration": "raw",
+      "quantile": 0.99,
+      "bins": 2
+    },
+    {
+      "adaptation": "frozen",
+      "calibration": "raw",
+      "quantile": 0.99,
+      "bins": 3
+    },
+    {
+      "adaptation": "frozen",
+      "calibration": "raw",
+      "quantile": 0.999,
+      "bins": 2
+    },
+    {
+      "adaptation": "frozen",
+      "calibration": "raw",
+      "quantile": 0.999,
+      "bins": 3
+    },
+    {
+      "adaptation": "frozen",
+      "calibration": "mirror",
+      "quantile": 0.99,
+      "bins": 2
+    },
+    {
+      "adaptation": "frozen",
+      "calibration": "mirror",
+      "quantile": 0.99,
+      "bins": 3
+    },
+    {
+      "adaptation": "frozen",
+      "calibration": "mirror",
+      "quantile": 0.999,
+      "bins": 2
+    },
+    {
+      "adaptation": "frozen",
+      "calibration": "mirror",
+      "quantile": 0.999,
+      "bins": 3
+    },
+    {
+      "adaptation": "peer_location",
+      "calibration": "raw",
+      "quantile": 0.99,
+      "bins": 2
+    },
+    {
+      "adaptation": "peer_location",
+      "calibration": "raw",
+      "quantile": 0.99,
+      "bins": 3
+    },
+    {
+      "adaptation": "peer_location",
+      "calibration": "raw",
+      "quantile": 0.999,
+      "bins": 2
+    },
+    {
+      "adaptation": "peer_location",
+      "calibration": "raw",
+      "quantile": 0.999,
+      "bins": 3
+    },
+    {
+      "adaptation": "peer_location",
+      "calibration": "mirror",
+      "quantile": 0.99,
+      "bins": 2
+    },
+    {
+      "adaptation": "peer_location",
+      "calibration": "mirror",
+      "quantile": 0.99,
+      "bins": 3
+    },
+    {
+      "adaptation": "peer_location",
+      "calibration": "mirror",
+      "quantile": 0.999,
+      "bins": 2
+    },
+    {
+      "adaptation": "peer_location",
+      "calibration": "mirror",
+      "quantile": 0.999,
+      "bins": 3
+    },
+    {
+      "adaptation": "peer_line",
+      "calibration": "raw",
+      "quantile": 0.99,
+      "bins": 2
+    },
+    {
+      "adaptation": "peer_line",
+      "calibration": "raw",
+      "quantile": 0.99,
+      "bins": 3
+    },
+    {
+      "adaptation": "peer_line",
+      "calibration": "raw",
+      "quantile": 0.999,
+      "bins": 2
+    },
+    {
+      "adaptation": "peer_line",
+      "calibration": "raw",
+      "quantile": 0.999,
+      "bins": 3
+    },
+    {
+      "adaptation": "peer_line",
+      "calibration": "mirror",
+      "quantile": 0.99,
+      "bins": 2
+    },
+    {
+      "adaptation": "peer_line",
+      "calibration": "mirror",
+      "quantile": 0.99,
+      "bins": 3
+    },
+    {
+      "adaptation": "peer_line",
+      "calibration": "mirror",
+      "quantile": 0.999,
+      "bins": 2
+    },
+    {
+      "adaptation": "peer_line",
+      "calibration": "mirror",
+      "quantile": 0.999,
+      "bins": 3
+    }
+  ],
+  "controls": [
+    "native",
+    "coupled",
+    "impulse",
+    "burst2",
+    "shift"
+  ],
+  "reads": 1000000,
+  "stripes": 5000,
+  "bin_reads": 10000,
+  "raw_collection": "/root/workspace/Health-EC-workspace/Health-EC/experiments/results/t4_1_6_detector_method_smoke_full",
+  "source_verification": {
+    "artifact": "t4_1_6_detector_method_smoke_full",
+    "verified": 97,
+    "recorded": 97,
+    "archive": "history/t4_1_6_detector_method_smoke_full_sources_202610130014555454320000.zip",
+    "archived_execution_sources_pass": true,
+    "current_live_source_required": false
+  },
+  "formal_test_used": false,
+  "detector_only": true
+}

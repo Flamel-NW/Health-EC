@@ -1,0 +1,13 @@
+{
+  "candidate": 10,
+  "configuration": {
+    "adaptation": "peer_location",
+    "calibration": "raw",
+    "quantile": 0.999,
+    "bins": 2
+  },
+  "validation_pass": false,
+  "eligible": [],
+  "locked_at": "2026-10-13T02:51:29.865299+00:00",
+  "test_used_for_selection": false
+}

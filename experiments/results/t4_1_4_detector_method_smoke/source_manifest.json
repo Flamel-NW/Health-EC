@@ -1,0 +1,106 @@
+{
+  "v2_runner": {
+    "sha256": "1a33ca481531658854b80ca09dfa0af93cf93198b5218decbfc459ad49f89ef0",
+    "size": 27343
+  },
+  "v2_detector": {
+    "sha256": "1b0ee9e6bfab5e0c7b30df3231e8623620657fca854adcbaa0a047aee94a4953",
+    "size": 6804
+  },
+  "shared_runner": {
+    "sha256": "3af594d5c432401e5ed1508839b05df6c7ce5b598aa9bcd2fdf6f618c38c1133",
+    "size": 22162
+  },
+  "legacy_detector": {
+    "sha256": "3a14a7e3ba5b0a9cbb9ab7d33738d4ab153a09c25bde075ffd3087f7b18b586e",
+    "size": 9902
+  },
+  "artifact_guards": {
+    "sha256": "5c51e0f2ab9a60fe22bf9358b0f8db7323b836f5445ca37f8099067274a6168d",
+    "size": 3891
+  },
+  "public_runner": {
+    "sha256": "2412517737be57fe1585578680f7862193f859f28b07b722dc969e68f3b89966",
+    "size": 107822
+  },
+  "shard_contract": {
+    "sha256": "34febcba1e3e2709ccce454e69578c0b1606023d7382dba650d99904b4fd5f4b",
+    "size": 3107
+  },
+  "disk_contract": {
+    "sha256": "3e3075b5073552cb043c060d0fdc0f632a0473256b2eab847894df6f3cfe73a9",
+    "size": 2560
+  },
+  "cmake_experiments": {
+    "sha256": "0bf05dffbeb9cb65f51ab22dc41ad2656fccd3afda31af1b58ec572a3439258b",
+    "size": 2542
+  },
+  "binary": {
+    "sha256": "bd6d889736b616b3d1b85897cd3425d6d93fcb981d7879ebe940ae5dc7f3283d",
+    "size": 247584
+  },
+  "public_src/main.cpp": {
+    "sha256": "457b49e28ac2babd3039bc3569c864f37a60fd97f54eb4aa82c052c205e9e698",
+    "size": 12003
+  },
+  "public_src/sim/disk_simulator.h": {
+    "sha256": "79023a37ff59a96a1da36cfc8b2d349e96fb247e72f1cc9eb3f968f07d3cef10",
+    "size": 5140
+  },
+  "public_src/sim/workload_generator.cpp": {
+    "sha256": "cb331d5c129b3ef911ebad44243b275dadc04dc637db513716c538ff66fe8e4a",
+    "size": 1718
+  },
+  "public_src/sim/workload_generator.h": {
+    "sha256": "c641e3e79a1b9362c90dc0b4da417e322d97d24c791750d9790198df720eba4f",
+    "size": 2039
+  },
+  "public_src/sim/disk_simulator.cpp": {
+    "sha256": "ea11429c702e1d85c31e09740e6c729234fd67d209952797edda2e4714f7bea7",
+    "size": 8229
+  },
+  "public_src/ec/jerasure_wrapper.h": {
+    "sha256": "f952bc5d33550b4779adbf83a9e82a78027f05b2d6f9405c198cf825c65a7ee6",
+    "size": 2349
+  },
+  "public_src/ec/jerasure_wrapper.cpp": {
+    "sha256": "8051488a75d6f81984c78b4099e954bff439da2625e47fcb7bcafa16bc967e15",
+    "size": 5589
+  },
+  "public_src/core/placement_policy.h": {
+    "sha256": "424069d53ce9a6951f7a5ff3e33d5ceedc27c7a692ec3f5f856b02033dab131e",
+    "size": 970
+  },
+  "public_src/core/score_manager.h": {
+    "sha256": "061133132cbbbc36d1ffb252ad92b9b1670184d155ca62ec57b190a3f088742a",
+    "size": 4691
+  },
+  "public_src/core/read_scheduler.cpp": {
+    "sha256": "860db81c856cba119cab1d04919753422c1265027fccd445b57d227485fd216b",
+    "size": 10202
+  },
+  "public_src/core/migration_scheduler.cpp": {
+    "sha256": "f539323023328ac474ad80317b393e6dd9f37f209d7a1deeb9caa1444fc32350",
+    "size": 4774
+  },
+  "public_src/core/migration_scheduler.h": {
+    "sha256": "f4e84a51d995dff91825f881ccd00448d50af0a6f2f79815cb58746fcf863c9a",
+    "size": 3277
+  },
+  "public_src/core/read_scheduler.h": {
+    "sha256": "dd855cdcbce451846970979209224aad400e46d0e8abf2048ed5e11523c7ecd6",
+    "size": 5999
+  },
+  "public_src/core/placement_policy.cpp": {
+    "sha256": "852a1b9194f4b161c265db1dcfb755c0730493d340410388908dbbbe464ed209",
+    "size": 811
+  },
+  "public_src/core/score_manager.cpp": {
+    "sha256": "278123f26481b1c2853eafa08bbd22189bc4e692c6fa78667fe5ad6ae86f2955",
+    "size": 4012
+  },
+  "root_cmake": {
+    "sha256": "ba27f2932ce83c817a5cc332152e3b3138ca0083b3b82e12a8b956c49e36ffee",
+    "size": 472
+  }
+}

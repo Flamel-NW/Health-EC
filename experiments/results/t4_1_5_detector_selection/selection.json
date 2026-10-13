@@ -1,0 +1,14 @@
+{
+  "candidate": 22,
+  "configuration": {
+    "family": "loglinear",
+    "calibration": "mirror",
+    "quantile": 0.9999,
+    "event": "guard"
+  },
+  "validation_pass": false,
+  "eligible_candidates": [],
+  "test_used_for_selection": false,
+  "smoke_not_selection": false,
+  "locked_at": "2026-10-12T20:51:11.574467+00:00"
+}

@@ -1,0 +1,52 @@
+{
+  "decision": "ENGINEERING_READY_FOR_T4.1.7",
+  "execution_sources": [
+    {
+      "artifact": "t4_1_6_detector_method_smoke",
+      "verified": 96,
+      "recorded": 96,
+      "archive": "history/t4_1_6_detector_method_smoke_sources_202610130006455171440000.zip",
+      "archived_execution_sources_pass": true,
+      "current_live_source_required": false
+    },
+    {
+      "artifact": "t4_1_6_detector_method_smoke_full",
+      "verified": 97,
+      "recorded": 97,
+      "archive": "history/t4_1_6_detector_method_smoke_full_sources_202610130014555454320000.zip",
+      "archived_execution_sources_pass": true,
+      "current_live_source_required": false
+    },
+    {
+      "artifact": "t4_1_6_method_logic_diagnostic",
+      "verified": 72,
+      "recorded": 72,
+      "archive": "history/t4_1_6_method_logic_diagnostic_sources_202610130010285991810000.zip",
+      "archived_execution_sources_pass": true,
+      "current_live_source_required": false
+    },
+    {
+      "artifact": "t4_1_6_detector_method_protocol_replay",
+      "verified": 95,
+      "recorded": 95,
+      "archive": "history/t4_1_6_detector_method_protocol_replay_sources_202610130028217478150000.zip",
+      "archived_execution_sources_pass": true,
+      "current_live_source_required": false
+    }
+  ],
+  "ctest": 14,
+  "workflow_tests": 64,
+  "formal_selection": false,
+  "formal_test": false,
+  "model_event_equivalence": [
+    "models.json",
+    "detection_timing.csv",
+    "event_episodes.csv",
+    "peer_diagnostics.csv",
+    "pressure_diagnostics.csv"
+  ],
+  "protocol_sha256": "d1e36a2fb8c5f5ec77e575bcff7d179d54808302d2966097f1d281644732ce94",
+  "method_sha256": "9f30c8f57fbd5a4be61265c94a3aee95ccec69b911d25f57d81b8881445a3973",
+  "qualification": "engineering only; one checking seed; original comparator failures retained; no deployment configuration",
+  "available_space_bytes": 12869021696
+}

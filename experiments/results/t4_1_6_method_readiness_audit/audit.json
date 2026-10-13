@@ -1,0 +1,37 @@
+{
+  "decision": "ENGINEERING_READY_FOR_T4.1.7",
+  "sources": [
+    {
+      "artifact": "t4_1_6_detector_method_smoke",
+      "verified": 96,
+      "recorded": 96,
+      "archive": "history/t4_1_6_detector_method_smoke_sources_202610130006455171440000.zip",
+      "archived_execution_sources_pass": true,
+      "current_live_source_required": false
+    },
+    {
+      "artifact": "t4_1_6_detector_method_smoke_full",
+      "verified": 97,
+      "recorded": 97,
+      "archive": "history/t4_1_6_detector_method_smoke_full_sources_202610130014555454320000.zip",
+      "archived_execution_sources_pass": true,
+      "current_live_source_required": false
+    },
+    {
+      "artifact": "t4_1_6_method_logic_diagnostic",
+      "verified": 72,
+      "recorded": 72,
+      "archive": "history/t4_1_6_method_logic_diagnostic_sources_202610130010285991810000.zip",
+      "archived_execution_sources_pass": true,
+      "current_live_source_required": false
+    }
+  ],
+  "ctest": 14,
+  "workflow_tests": 62,
+  "formal_selection": false,
+  "formal_test": false,
+  "protocol_sha256": "a11b1f6c3af5150bab6a24386e92b71e7d0c6b9a93806b85fa0d90d9fb7e722a",
+  "method_sha256": "c4dcba131b495d5091e26be44637102d90ea3b634308693f13e88ad2a58e56d3",
+  "policy_integration": false,
+  "space_free_bytes": 12889554944
+}

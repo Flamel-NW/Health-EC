@@ -1,0 +1,41 @@
+{
+  "decision": "NO_GO_DIAGNOSE",
+  "selection": {
+    "candidate": 10,
+    "configuration": {
+      "adaptation": "peer_location",
+      "calibration": "raw",
+      "quantile": 0.999,
+      "bins": 2
+    },
+    "validation_pass": false,
+    "eligible": [],
+    "locked_at": "2026-10-13T02:51:29.865299+00:00",
+    "test_used_for_selection": false
+  },
+  "sources": [
+    {
+      "mode": "select",
+      "verified": 429,
+      "raw_files": 360,
+      "raw_disk_bins": 3600000,
+      "archive": "history/t4_1_7_detector_selection_sources_202610130111213846650000.zip"
+    },
+    {
+      "mode": "test",
+      "verified": 831,
+      "raw_files": 300,
+      "raw_disk_bins": 3000000,
+      "archive": "history/t4_1_7_detector_test_sources_202610130252295691420000.zip"
+    }
+  ],
+  "ctest": 14,
+  "workflow_tests": 64,
+  "calibration_models": 288,
+  "primary_test_groups": 30,
+  "interaction_test_groups": 12,
+  "compressed_shard_origins_verified": 300,
+  "source_and_protocol_lock": "PASS",
+  "policy_integration": false,
+  "qualification": "relative disk anomalies in preregistered simulation/peer assumptions; no production or joint migration claim"
+}

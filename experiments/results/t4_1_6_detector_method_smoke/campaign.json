@@ -1,0 +1,179 @@
+{
+  "mode": "smoke",
+  "splits": {
+    "fit": [
+      93001
+    ],
+    "calibration": [
+      93002
+    ],
+    "validation": [
+      93003
+    ]
+  },
+  "candidates": [
+    {
+      "adaptation": "frozen",
+      "calibration": "raw",
+      "quantile": 0.99,
+      "bins": 2
+    },
+    {
+      "adaptation": "frozen",
+      "calibration": "raw",
+      "quantile": 0.99,
+      "bins": 3
+    },
+    {
+      "adaptation": "frozen",
+      "calibration": "raw",
+      "quantile": 0.999,
+      "bins": 2
+    },
+    {
+      "adaptation": "frozen",
+      "calibration": "raw",
+      "quantile": 0.999,
+      "bins": 3
+    },
+    {
+      "adaptation": "frozen",
+      "calibration": "mirror",
+      "quantile": 0.99,
+      "bins": 2
+    },
+    {
+      "adaptation": "frozen",
+      "calibration": "mirror",
+      "quantile": 0.99,
+      "bins": 3
+    },
+    {
+      "adaptation": "frozen",
+      "calibration": "mirror",
+      "quantile": 0.999,
+      "bins": 2
+    },
+    {
+      "adaptation": "frozen",
+      "calibration": "mirror",
+      "quantile": 0.999,
+      "bins": 3
+    },
+    {
+      "adaptation": "peer_location",
+      "calibration": "raw",
+      "quantile": 0.99,
+      "bins": 2
+    },
+    {
+      "adaptation": "peer_location",
+      "calibration": "raw",
+      "quantile": 0.99,
+      "bins": 3
+    },
+    {
+      "adaptation": "peer_location",
+      "calibration": "raw",
+      "quantile": 0.999,
+      "bins": 2
+    },
+    {
+      "adaptation": "peer_location",
+      "calibration": "raw",
+      "quantile": 0.999,
+      "bins": 3
+    },
+    {
+      "adaptation": "peer_location",
+      "calibration": "mirror",
+      "quantile": 0.99,
+      "bins": 2
+    },
+    {
+      "adaptation": "peer_location",
+      "calibration": "mirror",
+      "quantile": 0.99,
+      "bins": 3
+    },
+    {
+      "adaptation": "peer_location",
+      "calibration": "mirror",
+      "quantile": 0.999,
+      "bins": 2
+    },
+    {
+      "adaptation": "peer_location",
+      "calibration": "mirror",
+      "quantile": 0.999,
+      "bins": 3
+    },
+    {
+      "adaptation": "peer_line",
+      "calibration": "raw",
+      "quantile": 0.99,
+      "bins": 2
+    },
+    {
+      "adaptation": "peer_line",
+      "calibration": "raw",
+      "quantile": 0.99,
+      "bins": 3
+    },
+    {
+      "adaptation": "peer_line",
+      "calibration": "raw",
+      "quantile": 0.999,
+      "bins": 2
+    },
+    {
+      "adaptation": "peer_line",
+      "calibration": "raw",
+      "quantile": 0.999,
+      "bins": 3
+    },
+    {
+      "adaptation": "peer_line",
+      "calibration": "mirror",
+      "quantile": 0.99,
+      "bins": 2
+    },
+    {
+      "adaptation": "peer_line",
+      "calibration": "mirror",
+      "quantile": 0.99,
+      "bins": 3
+    },
+    {
+      "adaptation": "peer_line",
+      "calibration": "mirror",
+      "quantile": 0.999,
+      "bins": 2
+    },
+    {
+      "adaptation": "peer_line",
+      "calibration": "mirror",
+      "quantile": 0.999,
+      "bins": 3
+    }
+  ],
+  "controls": [
+    "native",
+    "coupled",
+    "impulse",
+    "burst2",
+    "shift"
+  ],
+  "interactions": [
+    "shift_impulse",
+    "shift_burst2"
+  ],
+  "reads": 100000,
+  "stripes": 500,
+  "bin_reads": 1000,
+  "workers": 2,
+  "detector_only": true,
+  "available_space_bytes": 13019160576,
+  "minimum_space_bytes": 268435456.0,
+  "engineering_scale": "small"
+}

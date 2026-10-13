@@ -1,0 +1,8 @@
+{
+  "decision": "NO_GO_DIAGNOSE",
+  "mode": "test",
+  "research_gates_pass": false,
+  "formal_selection_created": false,
+  "formal_test_used": true,
+  "boundary": "relative disk anomalies; peer comparability/majority assumptions; semi-synthetic controls; no integration"
+}

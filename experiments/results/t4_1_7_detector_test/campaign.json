@@ -1,0 +1,222 @@
+{
+  "mode": "test",
+  "splits": {
+    "test": [
+      10001,
+      10002,
+      10003,
+      10004,
+      10005,
+      10006,
+      10007,
+      10008,
+      10009,
+      10010,
+      10011,
+      10012,
+      10013,
+      10014,
+      10015,
+      10016,
+      10017,
+      10018,
+      10019,
+      10020,
+      10021,
+      10022,
+      10023,
+      10024,
+      10025,
+      10026,
+      10027,
+      10028,
+      10029,
+      10030,
+      10031,
+      10032,
+      10033,
+      10034,
+      10035,
+      10036,
+      10037,
+      10038,
+      10039,
+      10040,
+      10041,
+      10042,
+      10043,
+      10044,
+      10045,
+      10046,
+      10047,
+      10048,
+      10049,
+      10050
+    ]
+  },
+  "candidates": [
+    {
+      "adaptation": "frozen",
+      "calibration": "raw",
+      "quantile": 0.99,
+      "bins": 2
+    },
+    {
+      "adaptation": "frozen",
+      "calibration": "raw",
+      "quantile": 0.99,
+      "bins": 3
+    },
+    {
+      "adaptation": "frozen",
+      "calibration": "raw",
+      "quantile": 0.999,
+      "bins": 2
+    },
+    {
+      "adaptation": "frozen",
+      "calibration": "raw",
+      "quantile": 0.999,
+      "bins": 3
+    },
+    {
+      "adaptation": "frozen",
+      "calibration": "mirror",
+      "quantile": 0.99,
+      "bins": 2
+    },
+    {
+      "adaptation": "frozen",
+      "calibration": "mirror",
+      "quantile": 0.99,
+      "bins": 3
+    },
+    {
+      "adaptation": "frozen",
+      "calibration": "mirror",
+      "quantile": 0.999,
+      "bins": 2
+    },
+    {
+      "adaptation": "frozen",
+      "calibration": "mirror",
+      "quantile": 0.999,
+      "bins": 3
+    },
+    {
+      "adaptation": "peer_location",
+      "calibration": "raw",
+      "quantile": 0.99,
+      "bins": 2
+    },
+    {
+      "adaptation": "peer_location",
+      "calibration": "raw",
+      "quantile": 0.99,
+      "bins": 3
+    },
+    {
+      "adaptation": "peer_location",
+      "calibration": "raw",
+      "quantile": 0.999,
+      "bins": 2
+    },
+    {
+      "adaptation": "peer_location",
+      "calibration": "raw",
+      "quantile": 0.999,
+      "bins": 3
+    },
+    {
+      "adaptation": "peer_location",
+      "calibration": "mirror",
+      "quantile": 0.99,
+      "bins": 2
+    },
+    {
+      "adaptation": "peer_location",
+      "calibration": "mirror",
+      "quantile": 0.99,
+      "bins": 3
+    },
+    {
+      "adaptation": "peer_location",
+      "calibration": "mirror",
+      "quantile": 0.999,
+      "bins": 2
+    },
+    {
+      "adaptation": "peer_location",
+      "calibration": "mirror",
+      "quantile": 0.999,
+      "bins": 3
+    },
+    {
+      "adaptation": "peer_line",
+      "calibration": "raw",
+      "quantile": 0.99,
+      "bins": 2
+    },
+    {
+      "adaptation": "peer_line",
+      "calibration": "raw",
+      "quantile": 0.99,
+      "bins": 3
+    },
+    {
+      "adaptation": "peer_line",
+      "calibration": "raw",
+      "quantile": 0.999,
+      "bins": 2
+    },
+    {
+      "adaptation": "peer_line",
+      "calibration": "raw",
+      "quantile": 0.999,
+      "bins": 3
+    },
+    {
+      "adaptation": "peer_line",
+      "calibration": "mirror",
+      "quantile": 0.99,
+      "bins": 2
+    },
+    {
+      "adaptation": "peer_line",
+      "calibration": "mirror",
+      "quantile": 0.99,
+      "bins": 3
+    },
+    {
+      "adaptation": "peer_line",
+      "calibration": "mirror",
+      "quantile": 0.999,
+      "bins": 2
+    },
+    {
+      "adaptation": "peer_line",
+      "calibration": "mirror",
+      "quantile": 0.999,
+      "bins": 3
+    }
+  ],
+  "controls": [
+    "native",
+    "coupled",
+    "impulse",
+    "burst2",
+    "shift"
+  ],
+  "interactions": [
+    "shift_impulse",
+    "shift_burst2"
+  ],
+  "reads": 1000000,
+  "stripes": 5000,
+  "bin_reads": 10000,
+  "workers": 4,
+  "detector_only": true,
+  "available_space_bytes": 12341506048,
+  "minimum_space_bytes": 3221225472.0,
+  "engineering_scale": null
+}

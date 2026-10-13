@@ -1,0 +1,162 @@
+{
+  "v2_runner": {
+    "sha256": "678395b126165674f7fb7762638721e77c25b23678992887178b39f2570d8955",
+    "size": 29123
+  },
+  "v2_detector": {
+    "sha256": "1b0ee9e6bfab5e0c7b30df3231e8623620657fca854adcbaa0a047aee94a4953",
+    "size": 6804
+  },
+  "shared_runner": {
+    "sha256": "3af594d5c432401e5ed1508839b05df6c7ce5b598aa9bcd2fdf6f618c38c1133",
+    "size": 22162
+  },
+  "legacy_detector": {
+    "sha256": "3a14a7e3ba5b0a9cbb9ab7d33738d4ab153a09c25bde075ffd3087f7b18b586e",
+    "size": 9902
+  },
+  "artifact_guards": {
+    "sha256": "5c51e0f2ab9a60fe22bf9358b0f8db7323b836f5445ca37f8099067274a6168d",
+    "size": 3891
+  },
+  "public_runner": {
+    "sha256": "2412517737be57fe1585578680f7862193f859f28b07b722dc969e68f3b89966",
+    "size": 107822
+  },
+  "shard_contract": {
+    "sha256": "34febcba1e3e2709ccce454e69578c0b1606023d7382dba650d99904b4fd5f4b",
+    "size": 3107
+  },
+  "disk_contract": {
+    "sha256": "3e3075b5073552cb043c060d0fdc0f632a0473256b2eab847894df6f3cfe73a9",
+    "size": 2560
+  },
+  "cmake_experiments": {
+    "sha256": "0bf05dffbeb9cb65f51ab22dc41ad2656fccd3afda31af1b58ec572a3439258b",
+    "size": 2542
+  },
+  "binary": {
+    "sha256": "bd6d889736b616b3d1b85897cd3425d6d93fcb981d7879ebe940ae5dc7f3283d",
+    "size": 247584
+  },
+  "public_src/main.cpp": {
+    "sha256": "457b49e28ac2babd3039bc3569c864f37a60fd97f54eb4aa82c052c205e9e698",
+    "size": 12003
+  },
+  "public_src/sim/disk_simulator.h": {
+    "sha256": "79023a37ff59a96a1da36cfc8b2d349e96fb247e72f1cc9eb3f968f07d3cef10",
+    "size": 5140
+  },
+  "public_src/sim/workload_generator.cpp": {
+    "sha256": "cb331d5c129b3ef911ebad44243b275dadc04dc637db513716c538ff66fe8e4a",
+    "size": 1718
+  },
+  "public_src/sim/workload_generator.h": {
+    "sha256": "c641e3e79a1b9362c90dc0b4da417e322d97d24c791750d9790198df720eba4f",
+    "size": 2039
+  },
+  "public_src/sim/disk_simulator.cpp": {
+    "sha256": "ea11429c702e1d85c31e09740e6c729234fd67d209952797edda2e4714f7bea7",
+    "size": 8229
+  },
+  "public_src/ec/jerasure_wrapper.h": {
+    "sha256": "f952bc5d33550b4779adbf83a9e82a78027f05b2d6f9405c198cf825c65a7ee6",
+    "size": 2349
+  },
+  "public_src/ec/jerasure_wrapper.cpp": {
+    "sha256": "8051488a75d6f81984c78b4099e954bff439da2625e47fcb7bcafa16bc967e15",
+    "size": 5589
+  },
+  "public_src/core/placement_policy.h": {
+    "sha256": "424069d53ce9a6951f7a5ff3e33d5ceedc27c7a692ec3f5f856b02033dab131e",
+    "size": 970
+  },
+  "public_src/core/score_manager.h": {
+    "sha256": "061133132cbbbc36d1ffb252ad92b9b1670184d155ca62ec57b190a3f088742a",
+    "size": 4691
+  },
+  "public_src/core/read_scheduler.cpp": {
+    "sha256": "860db81c856cba119cab1d04919753422c1265027fccd445b57d227485fd216b",
+    "size": 10202
+  },
+  "public_src/core/migration_scheduler.cpp": {
+    "sha256": "f539323023328ac474ad80317b393e6dd9f37f209d7a1deeb9caa1444fc32350",
+    "size": 4774
+  },
+  "public_src/core/migration_scheduler.h": {
+    "sha256": "f4e84a51d995dff91825f881ccd00448d50af0a6f2f79815cb58746fcf863c9a",
+    "size": 3277
+  },
+  "public_src/core/read_scheduler.h": {
+    "sha256": "dd855cdcbce451846970979209224aad400e46d0e8abf2048ed5e11523c7ecd6",
+    "size": 5999
+  },
+  "public_src/core/placement_policy.cpp": {
+    "sha256": "852a1b9194f4b161c265db1dcfb755c0730493d340410388908dbbbe464ed209",
+    "size": 811
+  },
+  "public_src/core/score_manager.cpp": {
+    "sha256": "278123f26481b1c2853eafa08bbd22189bc4e692c6fa78667fe5ad6ae86f2955",
+    "size": 4012
+  },
+  "root_cmake": {
+    "sha256": "ba27f2932ce83c817a5cc332152e3b3138ca0083b3b82e12a8b956c49e36ffee",
+    "size": 472
+  },
+  "campaign_support": {
+    "sha256": "698fc06dde97885dde3df79d57517cc9b32a49c0abe645403bea74abc6d32575",
+    "size": 6709
+  },
+  "lib_init": {
+    "sha256": "76f9b1aab1dc656f637e9ebee3150437513309149863aeab77736b5798346560",
+    "size": 62
+  },
+  "workflow_test_test_shard_utility_audit.py": {
+    "sha256": "7dc3c5f20151156ffd56d72579e8f60f717c9a5ce89847172510c83a1a53375f",
+    "size": 2080
+  },
+  "workflow_test_test_detector_campaign.py": {
+    "sha256": "9105b64f9688c7cc2e49161c98dc8ea6dfd444713cff6b059be2a7a3e6317fa1",
+    "size": 5849
+  },
+  "workflow_test_test_workflow_artifacts.py": {
+    "sha256": "102672db9f61ff327dffede875f6ec297702df6b1809d7a830bcc01bcc51aee3",
+    "size": 13975
+  },
+  "workflow_test_test_disk_detector_v3.py": {
+    "sha256": "91c66d4c0296fdace7b4357e8dd655042976a7954b2632726cee8391fec04590",
+    "size": 5510
+  },
+  "workflow_test_test_disk_detector_v2.py": {
+    "sha256": "8ba44f3e1eb5543af2063e854b1362dd62ae183c81fac67070c9ea163fc7e14b",
+    "size": 3387
+  },
+  "workflow_test_test_disk_detector.py": {
+    "sha256": "d8001d13f015b619c3c16e298f2f8363182402dcabc4c7463dfa5676d60ac228",
+    "size": 2997
+  },
+  "workflow_test_test_detector_campaign_v3.py": {
+    "sha256": "6df1be0757a6e2897b53c07317195da152874ea1bcecb4a9db74779a47deb16c",
+    "size": 8553
+  },
+  "workflow_test_test_detector_campaign_support.py": {
+    "sha256": "bbd595b94265ac2acc1c1a105ae2278ab6b801d24ee4c0fa03cc5c61c2237448",
+    "size": 1951
+  },
+  "v3_runner": {
+    "sha256": "81ce71dd9ed99e4c6dfb446938f09c19c88050671ee09819dc336ef0604c6d17",
+    "size": 29625
+  },
+  "v3_detector": {
+    "sha256": "2676d5590e8fc0a46cf989e1e15ec4bbba04d44f735b4d7c1fdc2fcffa4c022b",
+    "size": 10175
+  },
+  "future_utility": {
+    "sha256": "1a870f5809608dd65d5178b9666e6062ec3fcc9547f8619dd875f19c4bf3ffe1",
+    "size": 3466
+  },
+  "method": {
+    "sha256": "9f30c8f57fbd5a4be61265c94a3aee95ccec69b911d25f57d81b8881445a3973",
+    "size": 7682
+  }
+}

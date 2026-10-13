@@ -1,0 +1,171 @@
+{
+  "mode": "smoke",
+  "splits": {
+    "fit": [
+      91001
+    ],
+    "calibration": [
+      91002
+    ],
+    "validation": [
+      91003
+    ]
+  },
+  "candidates": [
+    {
+      "family": "constant",
+      "calibration": "raw",
+      "quantile": 0.99,
+      "event": "guard"
+    },
+    {
+      "family": "constant",
+      "calibration": "raw",
+      "quantile": 0.99,
+      "event": "consecutive"
+    },
+    {
+      "family": "constant",
+      "calibration": "raw",
+      "quantile": 0.999,
+      "event": "guard"
+    },
+    {
+      "family": "constant",
+      "calibration": "raw",
+      "quantile": 0.999,
+      "event": "consecutive"
+    },
+    {
+      "family": "constant",
+      "calibration": "raw",
+      "quantile": 0.9999,
+      "event": "guard"
+    },
+    {
+      "family": "constant",
+      "calibration": "raw",
+      "quantile": 0.9999,
+      "event": "consecutive"
+    },
+    {
+      "family": "constant",
+      "calibration": "mirror",
+      "quantile": 0.99,
+      "event": "guard"
+    },
+    {
+      "family": "constant",
+      "calibration": "mirror",
+      "quantile": 0.99,
+      "event": "consecutive"
+    },
+    {
+      "family": "constant",
+      "calibration": "mirror",
+      "quantile": 0.999,
+      "event": "guard"
+    },
+    {
+      "family": "constant",
+      "calibration": "mirror",
+      "quantile": 0.999,
+      "event": "consecutive"
+    },
+    {
+      "family": "constant",
+      "calibration": "mirror",
+      "quantile": 0.9999,
+      "event": "guard"
+    },
+    {
+      "family": "constant",
+      "calibration": "mirror",
+      "quantile": 0.9999,
+      "event": "consecutive"
+    },
+    {
+      "family": "loglinear",
+      "calibration": "raw",
+      "quantile": 0.99,
+      "event": "guard"
+    },
+    {
+      "family": "loglinear",
+      "calibration": "raw",
+      "quantile": 0.99,
+      "event": "consecutive"
+    },
+    {
+      "family": "loglinear",
+      "calibration": "raw",
+      "quantile": 0.999,
+      "event": "guard"
+    },
+    {
+      "family": "loglinear",
+      "calibration": "raw",
+      "quantile": 0.999,
+      "event": "consecutive"
+    },
+    {
+      "family": "loglinear",
+      "calibration": "raw",
+      "quantile": 0.9999,
+      "event": "guard"
+    },
+    {
+      "family": "loglinear",
+      "calibration": "raw",
+      "quantile": 0.9999,
+      "event": "consecutive"
+    },
+    {
+      "family": "loglinear",
+      "calibration": "mirror",
+      "quantile": 0.99,
+      "event": "guard"
+    },
+    {
+      "family": "loglinear",
+      "calibration": "mirror",
+      "quantile": 0.99,
+      "event": "consecutive"
+    },
+    {
+      "family": "loglinear",
+      "calibration": "mirror",
+      "quantile": 0.999,
+      "event": "guard"
+    },
+    {
+      "family": "loglinear",
+      "calibration": "mirror",
+      "quantile": 0.999,
+      "event": "consecutive"
+    },
+    {
+      "family": "loglinear",
+      "calibration": "mirror",
+      "quantile": 0.9999,
+      "event": "guard"
+    },
+    {
+      "family": "loglinear",
+      "calibration": "mirror",
+      "quantile": 0.9999,
+      "event": "consecutive"
+    }
+  ],
+  "controls": [
+    "native",
+    "coupled",
+    "impulse"
+  ],
+  "reads": 100000,
+  "stripes": 500,
+  "bin_reads": 1000,
+  "detector_only": true,
+  "minimum_space_bytes": 268435456.0,
+  "available_space_bytes": 5708279808
+}

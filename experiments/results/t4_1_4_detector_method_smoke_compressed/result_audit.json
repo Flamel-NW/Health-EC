@@ -1,0 +1,7 @@
+{
+  "decision": "ENGINEERING_SMOKE_ONLY",
+  "mode": "smoke",
+  "research_gates_pass": false,
+  "robustness_pass": false,
+  "boundary": "semi-synthetic observation controls; frozen-policy single-read utility; no control integration"
+}
