@@ -1,0 +1,42 @@
+{
+  "candidate": 0,
+  "configuration": {
+    "adaptation": "peer_line",
+    "calibration": "raw",
+    "quantile": 0.99,
+    "strength": 0,
+    "bins": 3
+  },
+  "validation_pass": false,
+  "candidate_ids": [
+    0,
+    10,
+    23
+  ],
+  "configurations": [
+    {
+      "adaptation": "peer_line",
+      "calibration": "raw",
+      "quantile": 0.99,
+      "strength": 0,
+      "bins": 3
+    },
+    {
+      "adaptation": "peer_line",
+      "calibration": "mirror_block",
+      "quantile": 0.999,
+      "strength": 0,
+      "bins": 3
+    },
+    {
+      "adaptation": "peer_local",
+      "calibration": "mirror_block",
+      "quantile": 0.999,
+      "strength": 1,
+      "bins": 3
+    }
+  ],
+  "eligible": [],
+  "locked_at": "2026-10-14T05:09:15.888034+00:00",
+  "test_used_for_selection": false
+}

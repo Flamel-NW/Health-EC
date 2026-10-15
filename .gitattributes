@@ -1,0 +1,2 @@
+# Preserve provenance hashes for simulator-generated CSV files, which use CRLF.
+experiments/results/**/*.csv -text whitespace=cr-at-eol

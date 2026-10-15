@@ -1,0 +1,10 @@
+scene,candidate,migrations,migration_tp,migration_fp,previous_suspected,previous_confirmed,same_bin_suspected,same_bin_confirmed,migration_pressure_ood,previous_suspected_coverage,previous_confirmed_coverage
+realistic_2pct,0,200,200,0,102,97,177,98,4,0.51,0.485
+overlap_4pct,0,300,300,0,28,3,179,4,6,0.09333333333333334,0.01
+stress_20pct,0,1045,1045,0,85,11,488,19,0,0.08133971291866028,0.010526315789473684
+realistic_2pct,10,200,200,0,104,99,200,100,4,0.52,0.495
+overlap_4pct,10,300,300,0,108,99,300,100,6,0.36,0.33
+stress_20pct,10,1045,1045,0,848,790,1045,804,0,0.8114832535885167,0.7559808612440191
+realistic_2pct,23,200,200,0,104,99,200,100,4,0.52,0.495
+overlap_4pct,23,300,300,0,108,99,300,100,6,0.36,0.33
+stress_20pct,23,1045,1045,0,848,790,1045,804,0,0.8114832535885167,0.7559808612440191

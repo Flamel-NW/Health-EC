@@ -53,3 +53,7 @@ target_link_libraries(test_loser_significance PRIVATE healthec_core)
 target_compile_options(test_loser_significance PRIVATE -Wall -Wextra)
 
 add_test(NAME loser_significance COMMAND test_loser_significance)
+
+add_executable(test_fixed_target_observer test_fixed_target_observer.cpp)
+target_compile_options(test_fixed_target_observer PRIVATE -Wall -Wextra)
+add_test(NAME fixed_target_observer COMMAND test_fixed_target_observer)

@@ -1,0 +1,7 @@
+{
+  "decision": "ENGINEERING_MECHANISM_ONLY",
+  "scenarios": 10,
+  "formal_data_used": false,
+  "distribution_free_claim": false,
+  "note": "assumption-stress failures are retained, not parameter selection"
+}

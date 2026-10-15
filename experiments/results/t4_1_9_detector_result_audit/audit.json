@@ -1,0 +1,80 @@
+{
+  "decision": "NO_GO_DIAGNOSE",
+  "engineering_data_source_pass": true,
+  "selection": {
+    "candidate": 0,
+    "configuration": {
+      "adaptation": "peer_line",
+      "calibration": "raw",
+      "quantile": 0.99,
+      "strength": 0,
+      "bins": 3
+    },
+    "validation_pass": false,
+    "candidate_ids": [
+      0,
+      10,
+      23
+    ],
+    "configurations": [
+      {
+        "adaptation": "peer_line",
+        "calibration": "raw",
+        "quantile": 0.99,
+        "strength": 0,
+        "bins": 3
+      },
+      {
+        "adaptation": "peer_line",
+        "calibration": "mirror_block",
+        "quantile": 0.999,
+        "strength": 0,
+        "bins": 3
+      },
+      {
+        "adaptation": "peer_local",
+        "calibration": "mirror_block",
+        "quantile": 0.999,
+        "strength": 1,
+        "bins": 3
+      }
+    ],
+    "eligible": [],
+    "locked_at": "2026-10-14T05:09:15.888034+00:00",
+    "test_used_for_selection": false
+  },
+  "sources": [
+    {
+      "mode": "select",
+      "raw_files": 360,
+      "raw_disk_bins": 3600000,
+      "provenance_records": 441,
+      "artifact_records": 389,
+      "archive_sources": 51,
+      "archive_sha256": "87f48fe1c30dc7f5fe8c62c1f36e8e58b7c95440f7fa20f48b949633ccc24730"
+    },
+    {
+      "mode": "test",
+      "raw_files": 300,
+      "raw_disk_bins": 3000000,
+      "provenance_records": 1145,
+      "artifact_records": 1086,
+      "archive_sources": 51,
+      "archive_sha256": "c021ad29b7819fb40b26e4cba08871626c2c1d880b175a0389e64205d89e6691"
+    }
+  ],
+  "calibration": {
+    "models": 864,
+    "sufficient_models": 828
+  },
+  "gzip_roundtrips": 600,
+  "migration_replays": 450,
+  "locked_temporal_seed_controls": 2886,
+  "validation_confirmed_groups": 1728,
+  "test_confirmed_groups": 216,
+  "research_qualification": "NO_GO_DIAGNOSE",
+  "policy_integration": false,
+  "models_refit": false,
+  "selection_changed": false,
+  "qualification": "simulation and peer assumptions only; signed/unavailable preserved; no online, joint, layout or I/O claim"
+}

@@ -1,0 +1,7 @@
+mode,candidate,seed_controls,unique_base_bins,pre_onset_episodes,uncleared_intervals,healthy_false_bins,prior_abnormal,pre_first_onset_bins,pressure_ood
+validation,0,483,34535,13504,0,35150,2,35148,0
+validation,10,280,26308,10905,0,26460,316,25457,0
+validation,23,105,42,0,0,105,105,0,0
+test,0,1131,89654,33722,0,91366,16,91346,0
+test,10,657,68244,27778,0,68597,744,66384,0
+test,23,230,104,12,0,235,223,12,0

@@ -1,0 +1,215 @@
+{
+  "mode": "smoke",
+  "splits": {
+    "fit": [
+      95001
+    ],
+    "calibration": [
+      95002,
+      95003,
+      95004,
+      95005
+    ],
+    "validation": [
+      95006
+    ]
+  },
+  "candidates": [
+    {
+      "adaptation": "peer_line",
+      "calibration": "raw",
+      "quantile": 0.99,
+      "strength": 0,
+      "bins": 3
+    },
+    {
+      "adaptation": "peer_line",
+      "calibration": "raw",
+      "quantile": 0.99,
+      "strength": 1,
+      "bins": 3
+    },
+    {
+      "adaptation": "peer_line",
+      "calibration": "raw",
+      "quantile": 0.999,
+      "strength": 0,
+      "bins": 3
+    },
+    {
+      "adaptation": "peer_line",
+      "calibration": "raw",
+      "quantile": 0.999,
+      "strength": 1,
+      "bins": 3
+    },
+    {
+      "adaptation": "peer_line",
+      "calibration": "mirror",
+      "quantile": 0.99,
+      "strength": 0,
+      "bins": 3
+    },
+    {
+      "adaptation": "peer_line",
+      "calibration": "mirror",
+      "quantile": 0.99,
+      "strength": 1,
+      "bins": 3
+    },
+    {
+      "adaptation": "peer_line",
+      "calibration": "mirror",
+      "quantile": 0.999,
+      "strength": 0,
+      "bins": 3
+    },
+    {
+      "adaptation": "peer_line",
+      "calibration": "mirror",
+      "quantile": 0.999,
+      "strength": 1,
+      "bins": 3
+    },
+    {
+      "adaptation": "peer_line",
+      "calibration": "mirror_block",
+      "quantile": 0.99,
+      "strength": 0,
+      "bins": 3
+    },
+    {
+      "adaptation": "peer_line",
+      "calibration": "mirror_block",
+      "quantile": 0.99,
+      "strength": 1,
+      "bins": 3
+    },
+    {
+      "adaptation": "peer_line",
+      "calibration": "mirror_block",
+      "quantile": 0.999,
+      "strength": 0,
+      "bins": 3
+    },
+    {
+      "adaptation": "peer_line",
+      "calibration": "mirror_block",
+      "quantile": 0.999,
+      "strength": 1,
+      "bins": 3
+    },
+    {
+      "adaptation": "peer_local",
+      "calibration": "raw",
+      "quantile": 0.99,
+      "strength": 0,
+      "bins": 3
+    },
+    {
+      "adaptation": "peer_local",
+      "calibration": "raw",
+      "quantile": 0.99,
+      "strength": 1,
+      "bins": 3
+    },
+    {
+      "adaptation": "peer_local",
+      "calibration": "raw",
+      "quantile": 0.999,
+      "strength": 0,
+      "bins": 3
+    },
+    {
+      "adaptation": "peer_local",
+      "calibration": "raw",
+      "quantile": 0.999,
+      "strength": 1,
+      "bins": 3
+    },
+    {
+      "adaptation": "peer_local",
+      "calibration": "mirror",
+      "quantile": 0.99,
+      "strength": 0,
+      "bins": 3
+    },
+    {
+      "adaptation": "peer_local",
+      "calibration": "mirror",
+      "quantile": 0.99,
+      "strength": 1,
+      "bins": 3
+    },
+    {
+      "adaptation": "peer_local",
+      "calibration": "mirror",
+      "quantile": 0.999,
+      "strength": 0,
+      "bins": 3
+    },
+    {
+      "adaptation": "peer_local",
+      "calibration": "mirror",
+      "quantile": 0.999,
+      "strength": 1,
+      "bins": 3
+    },
+    {
+      "adaptation": "peer_local",
+      "calibration": "mirror_block",
+      "quantile": 0.99,
+      "strength": 0,
+      "bins": 3
+    },
+    {
+      "adaptation": "peer_local",
+      "calibration": "mirror_block",
+      "quantile": 0.99,
+      "strength": 1,
+      "bins": 3
+    },
+    {
+      "adaptation": "peer_local",
+      "calibration": "mirror_block",
+      "quantile": 0.999,
+      "strength": 0,
+      "bins": 3
+    },
+    {
+      "adaptation": "peer_local",
+      "calibration": "mirror_block",
+      "quantile": 0.999,
+      "strength": 1,
+      "bins": 3
+    }
+  ],
+  "controls": [
+    "native",
+    "coupled",
+    "impulse",
+    "burst2",
+    "shift",
+    "shift_impulse",
+    "shift_burst2",
+    "skew",
+    "heterogeneous",
+    "correlated",
+    "bridge",
+    "shift_burst2_correlated"
+  ],
+  "interactions": [],
+  "diagnostic_ids": [
+    0,
+    10,
+    23
+  ],
+  "reads": 100000,
+  "stripes": 500,
+  "bin_reads": 1000,
+  "workers": 2,
+  "detector_only": true,
+  "available_space_bytes": 10029633536,
+  "minimum_space_bytes": 536870912.0,
+  "engineering_scale": "small"
+}

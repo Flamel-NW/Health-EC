@@ -12,6 +12,7 @@
 #include "core/score_manager.h"
 #include "sim/disk_simulator.h"
 #include "sim/workload_generator.h"
+#include "fixed_target_observer.h"
 
 #include <algorithm>
 #include <array>
@@ -348,6 +349,7 @@ enum class OutputFormat {
     MigrationTrace,
     DiskTrace,
     ShardDiagnostic,
+    FixedTargetTrace,
 };
 
 struct MigrationStrategyConfig {
@@ -374,6 +376,7 @@ struct RuntimeConfig {
     bool extended_metrics = false;
     int detector_bin_reads = 10000;
     bool observe_shard_diagnostics = false;
+    bool observe_fixed_targets = false;
 };
 
 struct PolicyConfig {
@@ -563,6 +566,8 @@ static RuntimeConfig parse_args(int argc, char** argv) {
                 cfg.format = OutputFormat::DiskTrace;
             } else if (value == "shard_diagnostic") {
                 cfg.format = OutputFormat::ShardDiagnostic;
+            } else if (value == "fixed_target_trace") {
+                cfg.format = OutputFormat::FixedTargetTrace;
             } else {
                 throw std::invalid_argument("invalid --format: " + value);
             }
@@ -572,6 +577,8 @@ static RuntimeConfig parse_args(int argc, char** argv) {
             cfg.extended_metrics = true;
         } else if (arg == "--observe-shard-diagnostics") {
             cfg.observe_shard_diagnostics = true;
+        } else if (arg == "--observe-fixed-targets") {
+            cfg.observe_fixed_targets = true;
         } else {
             throw std::invalid_argument("unknown argument: " + arg);
         }
@@ -594,7 +601,8 @@ static void validate_runtime_config(const RuntimeConfig& cfg) {
          cfg.format == OutputFormat::EventTrace ||
          cfg.format == OutputFormat::MigrationTrace ||
          cfg.format == OutputFormat::DiskTrace ||
-         cfg.format == OutputFormat::ShardDiagnostic || cfg.observe_shard_diagnostics)) {
+         cfg.format == OutputFormat::ShardDiagnostic || cfg.observe_shard_diagnostics ||
+         cfg.format == OutputFormat::FixedTargetTrace || cfg.observe_fixed_targets)) {
         throw std::invalid_argument(
             "windowed_csv, event_trace, and migration_trace require a dynamic scenario");
     }
@@ -623,7 +631,8 @@ static void validate_runtime_config(const RuntimeConfig& cfg) {
         throw std::invalid_argument(
             "--health-alpha-d must be less than alpha_S");
     }
-    if ((cfg.format == OutputFormat::ShardDiagnostic || cfg.observe_shard_diagnostics) &&
+    if ((cfg.format == OutputFormat::ShardDiagnostic || cfg.observe_shard_diagnostics ||
+         cfg.format == OutputFormat::FixedTargetTrace || cfg.observe_fixed_targets) &&
         (cfg.policy_selection != PolicySelection::Single ||
          cfg.single_policy != PolicyKind::HealthEC ||
          (cfg.migration_strategy.kind != MigrationStrategyKind::Default &&
@@ -1019,6 +1028,7 @@ struct DynamicRunResult {
     int detector_bin_reads = 0;
     std::vector<std::vector<DiskObservation>> disk_observations;
     std::map<std::tuple<int, ShardId, DiskId>, ShardDiagnostic> shard_diagnostics;
+    healthec::diagnostic::FixedTargetObserver fixed_targets;
 };
 
 struct EventShardStats {
@@ -1899,7 +1909,8 @@ static DynamicRunResult run_dynamic_policy(const LatentWorld& world,
                                            const Layout& layout,
                                            const PolicyConfig& config,
                                            int detector_bin_reads = 0,
-                                           bool observe_shards = false)
+                                           bool observe_shards = false,
+                                           bool observe_fixed = false)
 {
     std::unordered_map<ShardId, ScoreState> scores;
     std::unordered_map<ShardId, DiskId> logical_disk = initial_logical_disks(layout);
@@ -1973,6 +1984,8 @@ static DynamicRunResult run_dynamic_policy(const LatentWorld& world,
     int current_window = -1;
 
     for (const auto& req : world.requests) {
+        if (observe_fixed)
+            result.fixed_targets.begin_window(req.window_id, req.read_index, logical_disk);
         if (detector_bin_reads > 0 &&
             req.read_index / detector_bin_reads != current_detector_bin) {
             snapshot_scores(current_detector_bin);
@@ -2018,6 +2031,39 @@ static DynamicRunResult run_dynamic_policy(const LatentWorld& world,
                 world, req, logical_disk, parity_shard, parity_lat, data_lat);
             if (read_bypass_eligible)
                 result.read_bypass_eligible_events++;
+            if (observe_fixed) {
+                bool proactive=false;
+                for (const auto& sh : req.data) {
+                    auto it=scores.find(sh.shard);
+                    proactive |= it!=scores.end() && it->second.S>config.health_ec_params.theta_S;
+                }
+                auto completion=[&](const auto& lat) {
+                    if (proactive) return sorted_with_parity(lat,parity_shard,parity_lat).at(K-1).second;
+                    double value=0.;
+                    for (const auto& item : lat) value=std::max(value,item.second);
+                    return value;
+                };
+                const double original=completion(data_lat);
+                for (const auto& sh : req.data) {
+                    const DiskId source=logical_disk_for(logical_disk,sh);
+                    auto legal=[&](DiskId target) {
+                        if (target<0 || target>=world.num_disks || target==source) return false;
+                        for (const auto& other : req.data)
+                            if (other.shard!=sh.shard && logical_disk_for(logical_disk,other)==target) return false;
+                        for (const auto& other : req.parity)
+                            if (logical_disk_for(logical_disk,other)==target) return false;
+                        return true;
+                    };
+                    auto alternative=[&](DiskId target) {
+                        auto changed=data_lat;
+                        for (auto& item : changed)
+                            if (item.first==sh.shard) item.second=latency_on_disk(world,sh,target);
+                        return completion(changed);
+                    };
+                    result.fixed_targets.observe(sh.shard,source,req.read_index,original,
+                        [&] { return select_migration_target(req,logical_disk,disk_health,source); },legal,alternative);
+                }
+            }
             if (observe_shards) {
                 bool proactive = false;
                 for (const auto& sh : req.data) {
@@ -2564,6 +2610,24 @@ static void print_migration_trace_rows(const RuntimeConfig& runtime,
 
 // main.
 
+static void print_fixed_target_trace(const RuntimeConfig& runtime, const DynamicRunResult& result) {
+    std::cout << "scenario,seed,policy,past_window,future_window,budget,shard_id,source_disk,target_disk,"
+                 "target_chosen_read,decision_read,past_reads,past_available_reads,past_gain_ms,"
+                 "future_reads,available_reads,source_changed,target_conflict,future_gain_ms,"
+                 "negative_reads,zero_reads,tail15_removed,tail15_added,tail30_removed,tail30_added\n";
+    std::cout << std::setprecision(12);
+    for (const auto& d : result.fixed_targets.decisions) {
+        const auto& p=d.past;
+        std::cout << runtime.scenario << ',' << runtime.seed << ",health_ec,"
+                  << d.past_window << ',' << d.future_window << ',' << d.budget << ','
+                  << p.shard << ',' << p.source << ',' << p.target << ',' << p.target_chosen_read << ','
+                  << d.decision_read << ',' << p.reads << ',' << p.available << ',' << p.gain << ','
+                  << d.future_reads << ',' << d.available_reads << ',' << d.source_changed << ','
+                  << d.target_conflict << ',' << d.gain << ',' << d.negative_reads << ',' << d.zero_reads << ','
+                  << d.tail_removed[0] << ',' << d.tail_added[0] << ',' << d.tail_removed[1] << ',' << d.tail_added[1] << '\n';
+    }
+}
+
 static void print_shard_diagnostic(const RuntimeConfig& runtime,
                                     const DynamicRunResult& result) {
     std::map<std::tuple<int, ShardId, DiskId>, long> migrations;
@@ -2672,7 +2736,14 @@ int main(int argc, char** argv) {
                 world, layout, configs.back(),
                 runtime.format == OutputFormat::DiskTrace
                     ? runtime.detector_bin_reads : 0,
-                runtime.format == OutputFormat::ShardDiagnostic || runtime.observe_shard_diagnostics));
+                runtime.format == OutputFormat::ShardDiagnostic || runtime.observe_shard_diagnostics,
+                runtime.format == OutputFormat::FixedTargetTrace || runtime.observe_fixed_targets));
+        }
+
+        if (runtime.format == OutputFormat::FixedTargetTrace) {
+            print_fixed_target_trace(runtime, results.front());
+            std::filesystem::remove_all(TMP);
+            return 0;
         }
 
         if (runtime.format == OutputFormat::ShardDiagnostic) {
