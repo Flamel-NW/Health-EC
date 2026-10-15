@@ -1,0 +1,7 @@
+scene,strategy,eligible,disabled_action,negative,zero,score_below_threshold,hotness_bound,migrated
+realistic_2pct,disabled,29393,364,7,1,136,28893,
+realistic_2pct,default,29180,,8,1,90,28893,197
+overlap_4pct,disabled,61105,514,14,173,86,60505,
+overlap_4pct,default,60891,,13,173,86,60505,300
+stress_20pct,disabled,293616,1348,32,15961,2152,290116,
+stress_20pct,default,292849,,32,15993,1692,290116,1041

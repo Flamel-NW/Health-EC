@@ -1,0 +1,87 @@
+{
+  "decision": "NO_GO_DIAGNOSE",
+  "engineering_data_source_pass": true,
+  "selection": {
+    "candidate": 2,
+    "configuration": {
+      "adaptation": "pooled",
+      "calibration": "raw",
+      "quantile": 0.995,
+      "strength": 0,
+      "bins": 3
+    },
+    "validation_pass": false,
+    "candidate_ids": [
+      2,
+      18,
+      22
+    ],
+    "configurations": [
+      {
+        "adaptation": "pooled",
+        "calibration": "raw",
+        "quantile": 0.995,
+        "strength": 0,
+        "bins": 3
+      },
+      {
+        "adaptation": "disk_history",
+        "calibration": "mirror",
+        "quantile": 0.995,
+        "strength": 0,
+        "bins": 3
+      },
+      {
+        "adaptation": "disk_history",
+        "calibration": "mirror_path",
+        "quantile": 0.995,
+        "strength": 0,
+        "bins": 3
+      }
+    ],
+    "eligible": [],
+    "locked_at": "2026-10-15T12:21:17.835874+00:00",
+    "test_used_for_selection": false
+  },
+  "sources": [
+    {
+      "mode": "select",
+      "raw_files": 360,
+      "raw_disk_bins": 3600000,
+      "provenance_records": 460,
+      "recovered_interrupted_collection": true,
+      "original_producer_raw_hashes_available": false,
+      "artifact_records": 396,
+      "archive_sources": 62,
+      "archive_sha256": "a2155db557d3f27a223415cb7532ba7cedafd11f546137ff41f34a2daaea0a17"
+    },
+    {
+      "mode": "test",
+      "raw_files": 300,
+      "raw_disk_bins": 3000000,
+      "provenance_records": 1456,
+      "recovered_interrupted_collection": false,
+      "original_producer_raw_hashes_available": true,
+      "artifact_records": 1386,
+      "archive_sources": 62,
+      "archive_sha256": "d6cf6afb22eeff4f7fee5b5c07228847cf6ce8f50c7ff1118213a7a5d5ceac33"
+    }
+  ],
+  "calibration": {
+    "models": 864,
+    "sufficient_models": 864
+  },
+  "gzip_roundtrips": 600,
+  "migration_replays": 450,
+  "locked_temporal_seed_controls": 5186,
+  "fixed_target_past_strata": 958,
+  "migration_count_cases": 6,
+  "frozen_raw_tail_buckets": 12,
+  "validation_confirmed_groups": 2160,
+  "test_confirmed_groups": 270,
+  "research_qualification": "NO_GO_DIAGNOSE",
+  "policy_integration": false,
+  "models_refit": false,
+  "selection_changed": false,
+  "qualification": "simulation and peer assumptions only; signed/unavailable preserved; no online, joint, layout or I/O claim"
+}

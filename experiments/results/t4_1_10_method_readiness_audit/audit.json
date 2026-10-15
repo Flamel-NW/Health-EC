@@ -1,0 +1,50 @@
+{
+  "decision": "PASS_TO_T4.1.11_VALIDATION",
+  "engineering_source_pass": true,
+  "research_qualification": "UNTESTED",
+  "eligible_for_t4_2": false,
+  "results": {
+    "t4_1_10_detector_method_smoke": {
+      "artifact_records": 89,
+      "archive_sources": 62,
+      "archive_sha256": "ef5a39b6f65ecbfb626cc80de1595db14eb36566ce86b10e336d1d960bcef945",
+      "raw_files": 36,
+      "gzip_roundtrips": 12,
+      "models": 864,
+      "sufficient_models": 864,
+      "confirmed_groups": 2160,
+      "passed_groups": 0,
+      "ctest": 16,
+      "workflow_tests": 109,
+      "fixed_target_risk_rows": 2394,
+      "formal_selection": false,
+      "formal_test": false
+    },
+    "t4_1_10_detector_method_smoke_full": {
+      "artifact_records": 89,
+      "archive_sources": 62,
+      "archive_sha256": "338f0c114a32a75cbb6d9d2363ea0da5d12b05895cd817b65e741976a44d8f31",
+      "raw_files": 36,
+      "gzip_roundtrips": 12,
+      "models": 864,
+      "sufficient_models": 864,
+      "confirmed_groups": 2160,
+      "passed_groups": 787,
+      "ctest": 16,
+      "workflow_tests": 109,
+      "fixed_target_risk_rows": 2394,
+      "formal_selection": false,
+      "formal_test": false
+    },
+    "t4_1_10_method_logic": {
+      "artifact_records": 9,
+      "archive_sources": 62,
+      "archive_sha256": "3832ffae029fd6850275fa284309a8e32926e99dc305db7f39c8befc5752dd50"
+    },
+    "t4_1_10_fixed_target_risk": {
+      "artifact_records": 10,
+      "archive_sources": 62,
+      "archive_sha256": "0c04f79988931bc8f8c86bfcd4cbedd35c6addc9859dd2e2353f14fbad389939"
+    }
+  }
+}

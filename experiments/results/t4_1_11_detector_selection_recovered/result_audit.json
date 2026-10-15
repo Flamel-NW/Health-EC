@@ -1,0 +1,9 @@
+{
+  "decision": "NO_GO_DIAGNOSE",
+  "mode": "select",
+  "research_gates_pass": false,
+  "formal_selection_created": true,
+  "formal_test_used": false,
+  "recovered_from_interrupted_collection": true,
+  "boundary": "raw hashes captured after reboot; archived source and successful commands/schema verified; no producer-time raw hashes"
+}

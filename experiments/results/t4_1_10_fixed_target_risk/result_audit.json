@@ -1,0 +1,10 @@
+{
+  "decision": "FROZEN_FOURTH_ROUND_DESCRIPTIVE_ONLY",
+  "gzip_verified": 300,
+  "detector_fitted": false,
+  "formal_fifth_data_used": false,
+  "past_only_strata": true,
+  "causal_explanation_proven": false,
+  "joint_gain_available": false,
+  "online_utility_claim": false
+}
