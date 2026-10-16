@@ -1,0 +1,14 @@
+{
+  "phase": "audit",
+  "command": [
+    "/root/.venvs/default/bin/python3",
+    "-u",
+    "-B",
+    "/root/workspace/Health-EC-workspace/Health-EC-workflow/scripts/tmp/audit_detector_sixth_round.py",
+    "--selection-dir",
+    "/root/workspace/Health-EC-workspace/Health-EC/experiments/results/t4_1_13_detector_selection"
+  ],
+  "started_at": "2026-10-16T10:28:10.608353+00:00",
+  "finished_at": "2026-10-16T12:18:40.834892+00:00",
+  "exit_code": 0
+}

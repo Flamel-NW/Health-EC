@@ -1,0 +1,94 @@
+{
+  "decision": "NO_GO_DIAGNOSE",
+  "engineering_data_source_pass": true,
+  "selection": {
+    "candidate": 2,
+    "configuration": {
+      "adaptation": "disk_history",
+      "calibration": "mirror_path",
+      "quantile": 0.995,
+      "strength": 0,
+      "bins": 3
+    },
+    "validation_pass": false,
+    "candidate_ids": [
+      2,
+      10,
+      22
+    ],
+    "configurations": [
+      {
+        "adaptation": "disk_history",
+        "calibration": "mirror_path",
+        "quantile": 0.995,
+        "strength": 0,
+        "bins": 3
+      },
+      {
+        "adaptation": "contrast_offset",
+        "calibration": "mirror_path",
+        "quantile": 0.995,
+        "strength": 0,
+        "bins": 3
+      },
+      {
+        "adaptation": "contrast_curve",
+        "calibration": "balanced_path",
+        "quantile": 0.995,
+        "strength": 0,
+        "bins": 3
+      }
+    ],
+    "eligible": [],
+    "locked_at": "2026-10-16T05:45:07.671775+00:00",
+    "test_used_for_selection": false
+  },
+  "sources": [
+    {
+      "mode": "select",
+      "raw_files": 360,
+      "raw_disk_bins": 3600000,
+      "provenance_records": 829,
+      "production_receipts": 363,
+      "collection_and_assessment_seals": true,
+      "recovered_interrupted_collection": false,
+      "original_producer_raw_hashes_available": true,
+      "artifact_records": 755,
+      "archive_sources": 73,
+      "archive_sha256": "49a14b3322a183da6397751cacfa616ccd025770ae9eaed66b01bf6f1236becd"
+    },
+    {
+      "mode": "test",
+      "raw_files": 300,
+      "raw_disk_bins": 3000000,
+      "provenance_records": 2525,
+      "production_receipts": 1053,
+      "collection_and_assessment_seals": true,
+      "recovered_interrupted_collection": false,
+      "original_producer_raw_hashes_available": true,
+      "artifact_records": 2442,
+      "archive_sources": 73,
+      "archive_sha256": "ac1ecc60ced4619e2e7f6cb3a1c1c8b9f02663250f30c33c1256e51a93cc7709"
+    }
+  ],
+  "calibration": {
+    "models": 864,
+    "sufficient_models": 864
+  },
+  "gzip_roundtrips": 600,
+  "migration_replays": 450,
+  "locked_temporal_seed_controls": 3267,
+  "fixed_target_past_strata": 965,
+  "migration_count_cases": 5,
+  "frozen_raw_tail_buckets": 36,
+  "locked_mechanism_seed_replays": 13500,
+  "bootstrap_seed": 20261015,
+  "absolute_seed_intervals": 8640,
+  "validation_confirmed_groups": 2160,
+  "test_confirmed_groups": 270,
+  "research_qualification": "NO_GO_DIAGNOSE",
+  "policy_integration": false,
+  "models_refit": false,
+  "selection_changed": false,
+  "qualification": "simulation and peer assumptions only; signed/unavailable preserved; no online, joint, layout or I/O claim"
+}

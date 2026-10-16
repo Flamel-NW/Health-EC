@@ -1,0 +1,42 @@
+{
+  "candidate": 2,
+  "configuration": {
+    "adaptation": "disk_history",
+    "calibration": "mirror_path",
+    "quantile": 0.995,
+    "strength": 0,
+    "bins": 3
+  },
+  "validation_pass": false,
+  "candidate_ids": [
+    2,
+    10,
+    22
+  ],
+  "configurations": [
+    {
+      "adaptation": "disk_history",
+      "calibration": "mirror_path",
+      "quantile": 0.995,
+      "strength": 0,
+      "bins": 3
+    },
+    {
+      "adaptation": "contrast_offset",
+      "calibration": "mirror_path",
+      "quantile": 0.995,
+      "strength": 0,
+      "bins": 3
+    },
+    {
+      "adaptation": "contrast_curve",
+      "calibration": "balanced_path",
+      "quantile": 0.995,
+      "strength": 0,
+      "bins": 3
+    }
+  ],
+  "eligible": [],
+  "locked_at": "2026-10-16T05:45:07.671775+00:00",
+  "test_used_for_selection": false
+}

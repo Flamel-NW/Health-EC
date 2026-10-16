@@ -1,0 +1,272 @@
+{
+  "mode": "select",
+  "splits": {
+    "fit": [
+      19001,
+      19002,
+      19003,
+      19004,
+      19005,
+      19006,
+      19007,
+      19008,
+      19009,
+      19010,
+      19011,
+      19012,
+      19013,
+      19014,
+      19015,
+      19016,
+      19017,
+      19018,
+      19019,
+      19020
+    ],
+    "calibration": [
+      20001,
+      20002,
+      20003,
+      20004,
+      20005,
+      20006,
+      20007,
+      20008,
+      20009,
+      20010,
+      20011,
+      20012,
+      20013,
+      20014,
+      20015,
+      20016,
+      20017,
+      20018,
+      20019,
+      20020
+    ],
+    "validation": [
+      21001,
+      21002,
+      21003,
+      21004,
+      21005,
+      21006,
+      21007,
+      21008,
+      21009,
+      21010,
+      21011,
+      21012,
+      21013,
+      21014,
+      21015,
+      21016,
+      21017,
+      21018,
+      21019,
+      21020
+    ]
+  },
+  "candidates": [
+    {
+      "adaptation": "disk_history",
+      "calibration": "mirror_path",
+      "quantile": 0.99,
+      "strength": 0,
+      "bins": 3
+    },
+    {
+      "adaptation": "disk_history",
+      "calibration": "mirror_path",
+      "quantile": 0.99,
+      "strength": 1,
+      "bins": 3
+    },
+    {
+      "adaptation": "disk_history",
+      "calibration": "mirror_path",
+      "quantile": 0.995,
+      "strength": 0,
+      "bins": 3
+    },
+    {
+      "adaptation": "disk_history",
+      "calibration": "mirror_path",
+      "quantile": 0.995,
+      "strength": 1,
+      "bins": 3
+    },
+    {
+      "adaptation": "disk_history",
+      "calibration": "balanced_path",
+      "quantile": 0.99,
+      "strength": 0,
+      "bins": 3
+    },
+    {
+      "adaptation": "disk_history",
+      "calibration": "balanced_path",
+      "quantile": 0.99,
+      "strength": 1,
+      "bins": 3
+    },
+    {
+      "adaptation": "disk_history",
+      "calibration": "balanced_path",
+      "quantile": 0.995,
+      "strength": 0,
+      "bins": 3
+    },
+    {
+      "adaptation": "disk_history",
+      "calibration": "balanced_path",
+      "quantile": 0.995,
+      "strength": 1,
+      "bins": 3
+    },
+    {
+      "adaptation": "contrast_offset",
+      "calibration": "mirror_path",
+      "quantile": 0.99,
+      "strength": 0,
+      "bins": 3
+    },
+    {
+      "adaptation": "contrast_offset",
+      "calibration": "mirror_path",
+      "quantile": 0.99,
+      "strength": 1,
+      "bins": 3
+    },
+    {
+      "adaptation": "contrast_offset",
+      "calibration": "mirror_path",
+      "quantile": 0.995,
+      "strength": 0,
+      "bins": 3
+    },
+    {
+      "adaptation": "contrast_offset",
+      "calibration": "mirror_path",
+      "quantile": 0.995,
+      "strength": 1,
+      "bins": 3
+    },
+    {
+      "adaptation": "contrast_offset",
+      "calibration": "balanced_path",
+      "quantile": 0.99,
+      "strength": 0,
+      "bins": 3
+    },
+    {
+      "adaptation": "contrast_offset",
+      "calibration": "balanced_path",
+      "quantile": 0.99,
+      "strength": 1,
+      "bins": 3
+    },
+    {
+      "adaptation": "contrast_offset",
+      "calibration": "balanced_path",
+      "quantile": 0.995,
+      "strength": 0,
+      "bins": 3
+    },
+    {
+      "adaptation": "contrast_offset",
+      "calibration": "balanced_path",
+      "quantile": 0.995,
+      "strength": 1,
+      "bins": 3
+    },
+    {
+      "adaptation": "contrast_curve",
+      "calibration": "mirror_path",
+      "quantile": 0.99,
+      "strength": 0,
+      "bins": 3
+    },
+    {
+      "adaptation": "contrast_curve",
+      "calibration": "mirror_path",
+      "quantile": 0.99,
+      "strength": 1,
+      "bins": 3
+    },
+    {
+      "adaptation": "contrast_curve",
+      "calibration": "mirror_path",
+      "quantile": 0.995,
+      "strength": 0,
+      "bins": 3
+    },
+    {
+      "adaptation": "contrast_curve",
+      "calibration": "mirror_path",
+      "quantile": 0.995,
+      "strength": 1,
+      "bins": 3
+    },
+    {
+      "adaptation": "contrast_curve",
+      "calibration": "balanced_path",
+      "quantile": 0.99,
+      "strength": 0,
+      "bins": 3
+    },
+    {
+      "adaptation": "contrast_curve",
+      "calibration": "balanced_path",
+      "quantile": 0.99,
+      "strength": 1,
+      "bins": 3
+    },
+    {
+      "adaptation": "contrast_curve",
+      "calibration": "balanced_path",
+      "quantile": 0.995,
+      "strength": 0,
+      "bins": 3
+    },
+    {
+      "adaptation": "contrast_curve",
+      "calibration": "balanced_path",
+      "quantile": 0.995,
+      "strength": 1,
+      "bins": 3
+    }
+  ],
+  "controls": [
+    "native",
+    "coupled",
+    "impulse",
+    "burst2",
+    "shift",
+    "shift_impulse",
+    "shift_burst2",
+    "skew",
+    "heterogeneous",
+    "correlated",
+    "bridge",
+    "shift_burst2_correlated",
+    "history_shift",
+    "cold_history",
+    "long_memory"
+  ],
+  "interactions": [],
+  "diagnostic_ids": [
+    2,
+    10,
+    22
+  ],
+  "reads": 1000000,
+  "stripes": 5000,
+  "bin_reads": 10000,
+  "workers": 2,
+  "detector_only": true,
+  "available_space_bytes": 461075148800,
+  "minimum_space_bytes": 8589934592.0,
+  "engineering_scale": null
+}
