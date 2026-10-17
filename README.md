@@ -4,6 +4,9 @@
 caused by fail-slow disks in erasure-coded storage, without triggering
 full-disk replacement.
 
+T4.1.13.1 的修复版本位于 [maintenance/](maintenance/README.md)，包含独立源码、
+构建入口和回归测试。下述命令使用该维护版本；原根目录实现保留用于历史复现。
+
 The system uses a three-tier scoring framework operating at shard granularity:
 
 | Score | Symbol | Purpose |
@@ -34,14 +37,14 @@ sudo apt install cmake g++ libjerasure-dev libgf-complete-dev
 ## Build
 
 ```bash
-cmake -B build -DCMAKE_BUILD_TYPE=Release
-cmake --build build -j$(nproc)
+cmake -S maintenance -B build-maintenance -DCMAKE_BUILD_TYPE=Release
+cmake --build build-maintenance -j$(nproc)
 ```
 
 ## Test
 
 ```bash
-ctest --test-dir build --output-on-failure
+ctest --test-dir build-maintenance --output-on-failure
 ```
 
 Expected output:
@@ -60,7 +63,7 @@ All tests passed.
 For passive per-disk observations from the dynamic simulation:
 
 ```bash
-build/experiments/compare_policies \
+build-maintenance/experiments/compare_policies \
   --scenario dynamic_realistic_100d_2pct_hdd \
   --num-reads 1000000 --num-stripes 5000 --seed 42 \
   --policy health_ec --health-migration-strategy disabled \
@@ -80,6 +83,7 @@ coupling and exposes full issued-read latency without cancellation censoring.
 
 ```
 Health-EC/
+├── maintenance/                    # maintained source, CMake, and regression tests
 ├── cmake/
 │   └── FindJerasure.cmake          # locates libJerasure + libgf_complete
 ├── src/

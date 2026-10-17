@@ -1,0 +1,88 @@
+find_package(Python3 COMPONENTS Interpreter REQUIRED)
+
+add_executable(calibrate_params tools/calibrate_params.cpp)
+
+target_include_directories(calibrate_params PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src
+)
+
+target_link_libraries(calibrate_params PRIVATE healthec_sim)
+
+target_compile_options(calibrate_params PRIVATE -Wall -Wextra)
+
+add_executable(calibrate_thresholds tools/calibrate_thresholds.cpp)
+
+target_include_directories(calibrate_thresholds PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src
+)
+
+target_link_libraries(calibrate_thresholds PRIVATE healthec_sim)
+
+target_compile_options(calibrate_thresholds PRIVATE -Wall -Wextra)
+
+add_executable(compare_policies tools/compare_policies.cpp)
+
+target_include_directories(compare_policies PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src
+)
+
+target_link_libraries(compare_policies PRIVATE healthec_sim)
+
+target_compile_options(compare_policies PRIVATE -Wall -Wextra)
+
+add_test(
+    NAME compare_policies_dynamic_csv
+    COMMAND $<TARGET_FILE:compare_policies>
+            --scenario dynamic_degradation
+            --num-reads 20000
+            --policy all
+            --format csv
+)
+
+add_test(
+    NAME compare_policies_dynamic_windowed_csv
+    COMMAND $<TARGET_FILE:compare_policies>
+            --scenario dynamic_degradation
+            --num-reads 20000
+            --policy all
+            --format windowed_csv
+)
+
+add_test(
+    NAME compare_policies_dynamic_event_trace
+    COMMAND $<TARGET_FILE:compare_policies>
+            --scenario dynamic_degradation
+            --num-reads 20000
+            --format event_trace
+)
+
+add_test(NAME compare_policies_dynamic_invalid_num_reads
+    COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/validate_negative_contract.py $<TARGET_FILE:compare_policies>)
+
+add_test(
+    NAME compare_policies_fixed_target_contract
+    COMMAND ${Python3_EXECUTABLE}
+            ${CMAKE_CURRENT_SOURCE_DIR}/tools/validate_fixed_target_contract.py
+            $<TARGET_FILE:compare_policies>
+)
+
+add_test(
+    NAME compare_policies_dynamic_contract
+    COMMAND ${Python3_EXECUTABLE}
+            ${CMAKE_CURRENT_SOURCE_DIR}/tools/validate_compare_policies_contract.py
+            $<TARGET_FILE:compare_policies>
+)
+
+add_test(
+    NAME compare_policies_disk_trace_contract
+    COMMAND ${Python3_EXECUTABLE}
+            ${CMAKE_CURRENT_SOURCE_DIR}/tools/validate_disk_trace_contract.py
+            $<TARGET_FILE:compare_policies>
+)
+
+add_test(
+    NAME compare_policies_shard_diagnostic_contract
+    COMMAND ${Python3_EXECUTABLE}
+            ${CMAKE_CURRENT_SOURCE_DIR}/tools/validate_shard_diagnostic_contract.py
+            $<TARGET_FILE:compare_policies>
+)

@@ -1,4 +1,5 @@
 build/
+/build-maintenance/
 .cache/
 .local-data/
 __pycache__/
